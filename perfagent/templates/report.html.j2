@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perf Test Report</title>
+{% include "_style.html.j2" %}
+</head>
+{% macro ms(v) %}{{ "%.0f" | format(v) if v is not none else "-" }}{% endmacro %}
+{% macro pct(v) %}{{ "%.2f%%" | format(v * 100) if v is not none else "-" }}{% endmacro %}
+<body><main>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+  <div>
+    <h1>{{ project.name }} - {{ r.meta.test_type | upper }} test</h1>
+    <div class="sub">Run {{ r.meta.run_id }} · {{ r.meta.environment }} · {{ r.meta.base_url }} · scale ×{{ r.meta.scale }} · k6 exit: {{ r.meta.k6_status }}</div>
+  </div>
+  <span class="verdict {{ r.verdict }}">{{ r.verdict }}</span>
+</div>
+
+<div class="grid">
+  <div class="card kpi"><div class="v">{{ r.overall.duration_s }}s</div><div class="l">Duration</div></div>
+  <div class="card kpi"><div class="v">{{ r.overall.requests }}</div><div class="l">Requests</div></div>
+  <div class="card kpi"><div class="v">{{ r.overall.rps }}</div><div class="l">Throughput (req/s)</div></div>
+  <div class="card kpi"><div class="v">{{ ms(r.overall.p95) }} ms</div><div class="l">p95 response</div></div>
+  <div class="card kpi"><div class="v">{{ ms(r.overall.p99) }} ms</div><div class="l">p99 response</div></div>
+  <div class="card kpi"><div class="v {{ 'fail' if r.overall.error_rate > 0.01 else '' }}">{{ pct(r.overall.error_rate) }}</div><div class="l">Error rate</div></div>
+  <div class="card kpi"><div class="v">{{ r.overall.vus_max }}</div><div class="l">Max VUs</div></div>
+  <div class="card kpi"><div class="v {{ 'warn' if r.overall.dropped_iterations else '' }}">{{ r.overall.dropped_iterations }}</div><div class="l">Dropped iterations</div></div>
+</div>
+
+{% if r.findings %}
+<h2>Analyst findings</h2>
+<div class="table-wrap"><table>
+<tr><th>#</th><th>Severity</th><th>Finding</th><th>Evidence</th><th>Recommendation</th></tr>
+{% for f in r.findings %}
+{% set sev = (f.severity or "info") | lower %}
+<tr>
+  <td>{{ loop.index }}</td>
+  <td><span class="badge {{ 'fail' if sev in ('critical', 'high') else ('warn' if sev == 'medium' else 'muted') }}">{{ f.severity | default("Info") }}</span>{% if f.status %}<div class="muted">{{ f.status }}</div>{% endif %}</td>
+  <td><b>{{ f.title }}</b>{% if f.detail %}<div class="muted">{{ f.detail }}</div>{% endif %}</td>
+  <td>{% if f.evidence is string %}{{ f.evidence }}{% else %}<ul style="margin:0;padding-left:16px">{% for e in f.evidence or [] %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}</td>
+  <td>{{ f.recommendation }}</td>
+</tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Observations <span class="muted" style="font-weight:400;font-size:13px">(automatic heuristics)</span></h2>
+<div class="card"><ul class="notes">{% for n in r.observations %}<li>{{ n }}</li>{% endfor %}</ul>
+{% if has_dashboard %}<p>Time-series view: <a href="dashboard.html">k6 dashboard</a></p>{% endif %}</div>
+
+<h2>Scenarios vs SLA</h2>
+<div class="table-wrap"><table>
+<tr><th>ID</th><th>Scenario</th><th>Pri</th><th class="n">Iterations</th><th class="n">Requests</th><th class="n">avg</th><th class="n">p90</th><th class="n">p95</th><th class="n">p99</th><th class="n">SLA p95</th><th class="n">Errors</th><th>SLA</th></tr>
+{% for s in r.scenarios %}
+<tr>
+  <td><b>{{ s.id }}</b></td><td>{{ s.name }}{% if s.web %}<div class="muted">LCP p75 {{ ms(s.web.lcp) }}ms · FCP {{ ms(s.web.fcp) }}ms · TTFB {{ ms(s.web.ttfb) }}ms · CLS {{ "%.3f" | format(s.web.cls) if s.web.cls is not none else "-" }}</div>{% endif %}</td>
+  <td><span class="badge {{ s.priority }}">{{ s.priority }}</span></td>
+  <td class="n">{{ s.iterations }}</td><td class="n">{{ s.requests }}</td>
+  <td class="n">{{ ms(s.avg) }}</td><td class="n">{{ ms(s.p90) }}</td><td class="n">{{ ms(s.p95) }}</td><td class="n">{{ ms(s.p99) }}</td>
+  <td class="n">{{ s.sla.p95_ms }}</td><td class="n">{{ pct(s.error_rate) }}</td>
+  <td><span class="badge {{ 'pass' if s.sla_ok else 'fail' }}">{{ "met" if s.sla_ok else "breached" }}</span></td>
+</tr>
+{% endfor %}
+</table></div>
+
+<h2>Errors <span class="muted" style="font-weight:400;font-size:13px">(transport and script errors from k6.log; HTTP status failures are under Failed checks)</span></h2>
+{% if r.errors %}
+<div class="table-wrap"><table>
+<tr><th>Where</th><th>Error</th><th class="n">Count</th></tr>
+{% for e in r.errors %}<tr><td><code>{{ e.where }}</code></td><td>{{ e.error }}</td><td class="n fail">{{ e.count }}</td></tr>{% endfor %}
+</table></div>
+{% else %}
+<div class="card muted">No transport or script errors logged.</div>
+{% endif %}
+
+<h2>Transactions (steps) - p95 against SLA</h2>
+<div class="table-wrap"><table>
+<tr><th>Step</th><th class="n">Count</th><th class="n">avg</th><th class="n">p95</th><th class="n">p99</th><th class="n">max</th><th style="width:30%">p95 vs SLA</th></tr>
+{% for st in r.steps %}
+{% set ratio = (st.p95 or 0) / st.sla_p95 %}
+<tr><td>{{ st.name }}</td><td class="n">{{ st.count }}</td><td class="n">{{ ms(st.avg) }}</td><td class="n">{{ ms(st.p95) }}</td><td class="n">{{ ms(st.p99) }}</td><td class="n">{{ ms(st.max) }}</td>
+<td><div class="bar {{ 'over' if ratio > 1 }}" style="width: {{ [ratio * 100, 100] | min }}%"></div></td></tr>
+{% endfor %}
+</table></div>
+
+{% if r.baseline %}
+<h2>Comparison with baseline {{ r.baseline.run_id }}</h2>
+<div class="table-wrap"><table>
+<tr><th>Scenario</th><th class="n">Baseline p95</th><th class="n">This run p95</th><th class="n">Δ</th><th class="n">Baseline errors</th><th class="n">Errors</th><th>Result</th></tr>
+{% for b in r.baseline.rows %}
+<tr><td>{{ b.id }}</td><td class="n">{{ ms(b.base_p95) }}</td><td class="n">{{ ms(b.p95) }}</td><td class="n {{ 'fail' if b.delta_pct > 10 else ('pass' if b.delta_pct < -10 else '') }}">{{ "%+.1f%%" | format(b.delta_pct) }}</td>
+<td class="n">{{ "%.2f%%" | format(b.base_err) }}</td><td class="n">{{ "%.2f%%" | format(b.err) }}</td>
+<td><span class="badge {{ 'fail' if b.regression else 'pass' }}">{{ "regression" if b.regression else "ok" }}</span></td></tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Thresholds</h2>
+<div class="table-wrap"><table>
+<tr><th>Metric</th><th>Threshold</th><th>Result</th></tr>
+{% for t in r.thresholds %}<tr><td><code>{{ t.metric }}</code></td><td><code>{{ t.expr }}</code></td><td><span class="badge {{ 'pass' if t.ok else 'fail' }}">{{ "pass" if t.ok else "fail" }}</span></td></tr>{% endfor %}
+</table></div>
+
+<h2>Network breakdown (avg)</h2>
+<div class="grid">
+  <div class="card kpi"><div class="v">{{ ms(r.overall.waiting_avg) }} ms</div><div class="l">Server wait (TTFB)</div></div>
+  <div class="card kpi"><div class="v">{{ "%.1f" | format(r.overall.blocked_avg or 0) }} ms</div><div class="l">Blocked (conn. pool)</div></div>
+  <div class="card kpi"><div class="v">{{ "%.1f" | format(r.overall.connecting_avg or 0) }} ms</div><div class="l">TCP connect</div></div>
+  <div class="card kpi"><div class="v">{{ "%.1f" | format(r.overall.tls_avg or 0) }} ms</div><div class="l">TLS handshake</div></div>
+  <div class="card kpi"><div class="v">{{ r.overall.received_mb }} MB</div><div class="l">Data received</div></div>
+  <div class="card kpi"><div class="v">{{ r.overall.sent_mb }} MB</div><div class="l">Data sent</div></div>
+</div>
+
+{% set failed_checks = r.checks | selectattr("fails") | list %}
+{% if failed_checks %}
+<h2>Failed checks</h2>
+<div class="table-wrap"><table><tr><th>Check</th><th class="n">Passes</th><th class="n">Fails</th></tr>
+{% for c in failed_checks %}<tr><td>{{ c.name }}</td><td class="n">{{ c.passes }}</td><td class="n fail">{{ c.fails }}</td></tr>{% endfor %}
+</table></div>
+{% endif %}
+<p class="muted">Generated {{ r.generated_at }} by perfagent. Percentiles are what you sign off on; averages hide the tail.</p>
+</main></body></html>

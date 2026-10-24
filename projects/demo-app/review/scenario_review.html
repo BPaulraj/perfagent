@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scenario Review</title>
+<style>
+:root {
+  --bg: #f7f7f5; --surface: #ffffff; --text: #1f2328; --muted: #656d76; --border: #d8dee4;
+  --accent: #3b5bdb; --pass: #1a7f37; --pass-bg: #dafbe1; --fail: #cf222e; --fail-bg: #ffebe9;
+  --warn: #9a6700; --warn-bg: #fff8c5; --p1: #cf222e; --p2: #bc4c00; --p3: #57606a; --bar: #4c6ef5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --muted: #8d96a0; --border: #30363d;
+    --accent: #7c9cff; --pass: #3fb950; --pass-bg: #12261e; --fail: #f85149; --fail-bg: #2d1416;
+    --warn: #d29922; --warn-bg: #2b2111; --p1: #f85149; --p2: #f0883e; --p3: #8d96a0; --bar: #7c9cff;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 24px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 32px 0 10px; }
+.sub { color: var(--muted); margin-bottom: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.kpi .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; } .kpi .l { color: var(--muted); font-size: 12px; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; } tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1px solid currentColor; white-space: nowrap; }
+.pass { color: var(--pass); } .fail { color: var(--fail); } .warn { color: var(--warn); }
+.P1 { color: var(--p1); } .P2 { color: var(--p2); } .P3 { color: var(--p3); }
+.verdict { font-size: 18px; padding: 6px 16px; border-radius: 8px; font-weight: 700; }
+.verdict.PASS { background: var(--pass-bg); color: var(--pass); } .verdict.FAIL { background: var(--fail-bg); color: var(--fail); }
+.bar { height: 8px; background: var(--bar); border-radius: 4px; min-width: 2px; }
+.bar.over { background: var(--fail); }
+ul.notes li { margin-bottom: 6px; }
+details summary { cursor: pointer; color: var(--accent); }
+code { font-size: 12px; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
+.muted { color: var(--muted); }
+</style>
+</head>
+<body><main>
+<h1>Scenario Review - demo-app</h1>
+<div class="sub">Generated 2026-10-24T09:48:19+05:30 · Environment: test · 10 candidate scenarios</div>
+
+<div class="grid">
+  <div class="card kpi"><div class="v">10</div><div class="l">Candidates</div></div>
+  <div class="card kpi"><div class="v P1">4</div><div class="l">P1 - must test</div></div>
+  <div class="card kpi"><div class="v">10</div><div class="l">Approved</div></div>
+  <div class="card kpi"><div class="v">100%</div><div class="l">Approved workload share</div></div>
+<div class="card kpi"><div class="v">79%</div><div class="l">API endpoint coverage (15/19)</div></div></div>
+
+<h2>How to decide</h2>
+<div class="card">
+  Priority score = <b>40%</b> business criticality + <b>35%</b> usage frequency + <b>25%</b> technical risk (each rated 1-5), scaled to 100.
+  P1 ≥ 75 · P2 ≥ 50 · P3 &lt; 50.
+  <br>Approve in Claude Code chat (e.g. <i>"approve all P1 and SC-005"</i>) or with
+  <code>python -m perfagent catalog demo-app approve SC-001 SC-002</code> / <code>--priority P1</code>.
+  Edit ratings, SLAs and workload share directly in <code>catalog.yaml</code>, then re-run <code>catalog score</code>.
+</div>
+
+
+<h2>Ranked scenarios</h2>
+<div class="table-wrap"><table>
+<tr><th>#</th><th>ID</th><th>Scenario</th><th>Pri</th><th class="n">Score</th><th>Crit / Freq / Risk</th><th>Type</th><th class="n">Share</th><th>SLA p95</th><th>Status</th></tr>
+<tr>
+  <td>1</td><td><b>SC-001</b></td>
+  <td><b>Login and view dashboard</b><div class="muted">Customer logs in, app loads profile, dashboard summary and unread badge, then logs out</div>
+    <details><summary>6 steps · rationale</summary>
+      <p><i>Every session starts here. bcrypt login blocks the event loop and the dashboard runs 3 parallel queries through a single SQLite connection</i></p>
+      <ol><li><code>POST /auth/login</code> - Login</li><li><code>GET /auth/me</code> - Get current user</li><li><code>GET /dashboard/summary</code> - Dashboard summary</li><li><code>GET /inbox/unread-count</code> - Unread count</li><li><code>GET /dashboard/summary</code> - Dashboard refresh</li><li><code>POST /auth/logout</code> - Logout</li></ol>
+<p class="muted">Test data: pre-registered perf users (users.csv: email); password from env PERF_PASSWORD</p><p class="muted">Risks: bcrypt CPU on event loop; single DB connection</p>    </details>
+  </td>
+  <td><span class="badge P1">P1</span></td>
+  <td class="n">100</td>
+  <td>5 / 5 / 5</td>
+  <td>api</td>
+  <td class="n">30%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>2</td><td><b>SC-002</b></td>
+  <td><b>Browse and search the market</b><div class="muted">Customer opens Trade, sees live prices (15s polling), searches for stocks and checks holdings</div>
+    <details><summary>6 steps · rationale</summary>
+      <p><i>Highest-volume read path; LIKE '%term%' search across 3 columns cannot use an index, plus price polling from every open Trade page</i></p>
+      <ol><li><code>POST /auth/login</code> - Login</li><li><code>GET /companies</code> - List companies</li><li><code>GET /holdings</code> - Holdings</li><li><code>GET /companies</code> - Price poll</li><li><code>GET /companies</code> - Search companies</li><li><code>GET /companies</code> - Price poll 2</li></ol>
+<p class="muted">Test data: search_term column in users.csv (tickers, names, sectors)</p>    </details>
+  </td>
+  <td><span class="badge P1">P1</span></td>
+  <td class="n">87</td>
+  <td>4 / 5 / 4</td>
+  <td>api</td>
+  <td class="n">29%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>3</td><td><b>SC-003</b></td>
+  <td><b>Place a BUY trade</b><div class="muted">Customer checks wallet, finds a stock, buys 1 share, reviews trade history and dashboard</div>
+    <details><summary>6 steps · rationale</summary>
+      <p><i>Core revenue transaction; interactive DB transaction with 5-6 writes plus 2 inbox inserts holding the single connection - highest contention risk</i></p>
+      <ol><li><code>POST /auth/login</code> - Login</li><li><code>GET /wallet</code> - Wallet balance</li><li><code>GET /companies</code> - Find stock <span class="muted">→ extracts companyId</span></li><li><code>POST /trades</code> - Buy 1 share</li><li><code>GET /trades</code> - Trade history</li><li><code>GET /dashboard/summary</code> - Dashboard after trade</li></ol>
+<p class="muted">Test data: perf users with funded wallets (seed step adds funds)</p><p class="muted">Risks: 400 Insufficient balance if wallets are not topped up for long runs</p>    </details>
+  </td>
+  <td><span class="badge P1">P1</span></td>
+  <td class="n">86</td>
+  <td>5 / 3 / 5</td>
+  <td>api</td>
+  <td class="n">15%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>4</td><td><b>SC-010</b></td>
+  <td><b>Login to dashboard (real browser)</b><div class="muted">Real Chromium user logs in through the UI and waits for the dashboard navigation to render</div>
+    <details><summary>5 steps · rationale</summary>
+      <p><i>Measures end-user experience (LCP, FCP, CLS) of the critical entry journey including SPA bootstrap; note the Vite dev server serves unbundled modules (38 requests), so treat UI timings as dev-mode</i></p>
+      <ol><li>🌐 goto /login - Open login page</li><li>🌐 fill #email - Enter email</li><li>🌐 fill #password - Enter password</li><li>🌐 click form button - Submit login</li><li>🌐 waitFor nav a[href='/trade'] - Dashboard rendered</li></ol>
+    </details>
+  </td>
+  <td><span class="badge P1">P1</span></td>
+  <td class="n">83</td>
+  <td>5 / 4 / 3</td>
+  <td>web</td>
+  <td class="n">-%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>5</td><td><b>SC-005</b></td>
+  <td><b>Add funds to wallet</b><div class="muted">Customer opens Payments, reviews transactions and adds funds by bank transfer</div>
+    <details><summary>4 steps · rationale</summary>
+      <p><i>Money movement; simulated 1.5s payment delay keeps requests open so concurrency piles up; pending->success two-phase write</i></p>
+      <ol><li><code>POST /auth/login</code> - Login</li><li><code>GET /wallet/transactions</code> - Transactions</li><li><code>POST /wallet/add-funds</code> - Add funds bank transfer</li><li><code>GET /wallet</code> - Wallet balance</li></ol>
+    </details>
+  </td>
+  <td><span class="badge P2">P2</span></td>
+  <td class="n">74</td>
+  <td>5 / 2 / 4</td>
+  <td>api</td>
+  <td class="n">8%</td>
+  <td>2500 ms</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>6</td><td><b>SC-004</b></td>
+  <td><b>Sell from holdings</b><div class="muted">Customer opens holdings and sells 1 share of the first position</div>
+    <details><summary>4 steps · rationale</summary>
+      <p><i>Second write path (holding update/delete + wallet credit); same transaction contention, lower volume than buys</i></p>
+      <ol><li><code>POST /auth/login</code> - Login</li><li><code>GET /holdings</code> - View holdings <span class="muted">→ extracts companyId</span></li><li><code>POST /trades</code> - Sell 1 share</li><li><code>GET /trades</code> - Trade history</li></ol>
+<p class="muted">Test data: perf users holding shares (seed step buys a few)</p>    </details>
+  </td>
+  <td><span class="badge P2">P2</span></td>
+  <td class="n">66</td>
+  <td>4 / 2 / 4</td>
+  <td>api</td>
+  <td class="n">7%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>7</td><td><b>SC-008</b></td>
+  <td><b>Register a new account</b><div class="muted">New visitor creates an account (wallet and welcome message created)</div>
+    <details><summary>2 steps · rationale</summary>
+      <p><i>Acquisition funnel; bcrypt hash plus 3 inserts; spikes during campaigns</i></p>
+      <ol><li><code>POST /auth/register</code> - Register</li><li><code>GET /dashboard/summary</code> - Dashboard first visit</li></ol>
+<p class="muted">Risks: creates a new user per iteration - DB grows; clean up perf.reg.* users after testing</p>    </details>
+  </td>
+  <td><span class="badge P2">P2</span></td>
+  <td class="n">59</td>
+  <td>4 / 1 / 4</td>
+  <td>api</td>
+  <td class="n">2%</td>
+  <td>1500 ms</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>8</td><td><b>SC-006</b></td>
+  <td><b>Download a trade invoice PDF</b><div class="muted">Customer opens trade history and downloads the PDF invoice of the latest trade</div>
+    <details><summary>3 steps · rationale</summary>
+      <p><i>PDF generated on request with pdfkit - CPU on the event loop; regulatory document</i></p>
+      <ol><li><code>POST /auth/login</code> - Login</li><li><code>GET /trades</code> - Trade history <span class="muted">→ extracts invoiceId</span></li><li><code>GET /invoices/{invoiceId}/pdf</code> - Invoice PDF</li></ol>
+<p class="muted">Test data: perf users with at least one trade (seed step)</p>    </details>
+  </td>
+  <td><span class="badge P2">P2</span></td>
+  <td class="n">58</td>
+  <td>3 / 2 / 4</td>
+  <td>api</td>
+  <td class="n">3%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>9</td><td><b>SC-007</b></td>
+  <td><b>Read inbox messages</b><div class="muted">Customer opens inbox, opens the newest message (marks read) and the badge refreshes</div>
+    <details><summary>4 steps · rationale</summary>
+      <p><i>Unpaginated inbox grows by 2 messages per trade - degrades over time; frequent but low business impact</i></p>
+      <ol><li><code>POST /auth/login</code> - Login</li><li><code>GET /inbox</code> - Inbox list <span class="muted">→ extracts messageId</span></li><li><code>PATCH /inbox/{messageId}</code> - Mark read</li><li><code>GET /inbox/unread-count</code> - Unread count</li></ol>
+    </details>
+  </td>
+  <td><span class="badge P2">P2</span></td>
+  <td class="n">52</td>
+  <td>2 / 3 / 3</td>
+  <td>api</td>
+  <td class="n">5%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>10</td><td><b>SC-009</b></td>
+  <td><b>Update profile</b><div class="muted">Customer edits phone/address on the profile page</div>
+    <details><summary>3 steps · rationale</summary>
+      <p><i>Rare, single-row update; low risk</i></p>
+      <ol><li><code>POST /auth/login</code> - Login</li><li><code>GET /auth/me</code> - Get profile</li><li><code>PUT /auth/profile</code> - Save profile</li></ol>
+    </details>
+  </td>
+  <td><span class="badge P3">P3</span></td>
+  <td class="n">33</td>
+  <td>2 / 1 / 2</td>
+  <td>api</td>
+  <td class="n">1%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+</table></div>
+
+<h2>Endpoints not covered by any scenario (4)</h2>
+<div class="card"><details><summary>Show list</summary><ul><li><code>GET /health</code></li><li><code>GET /invoices</code></li><li><code>GET /invoices/{id}/pdf</code></li><li><code>PATCH /inbox/{id}</code></li></ul></details>
+<p class="muted">Not every endpoint needs load. Low-traffic admin or one-off endpoints are usually left out on purpose; record the reason in the test plan.</p></div>
+</main></body></html>

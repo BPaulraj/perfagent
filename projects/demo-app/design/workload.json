@@ -1,0 +1,425 @@
+{
+  "project": "demo-app",
+  "planned_peak_rps": 5.09,
+  "generated_at": "2026-10-24T11:03:56+05:30",
+  "model": "open (arrival-rate) - Little's Law sizing",
+  "nfr": {
+    "peak_concurrent_users": 20,
+    "browser_vus": 1,
+    "est_response_s": 0.3,
+    "error_rate": 0.01
+  },
+  "auth": {
+    "type": "none",
+    "token_env": "PERF_TOKEN",
+    "apikey_header": "X-API-Key",
+    "apikey_env": "PERF_API_KEY",
+    "username_env": "PERF_USER",
+    "password_env": "PERF_PASSWORD",
+    "login": {
+      "method": "POST",
+      "path": "/auth/login",
+      "body": {
+        "username": "{{env.PERF_USER}}",
+        "password": "{{env.PERF_PASSWORD}}"
+      },
+      "token_path": "token"
+    }
+  },
+  "profiles": {
+    "smoke": {
+      "purpose": "Verify scripts, data and environment work (1 VU, few iterations). Gate before every other test.",
+      "iterations": 2,
+      "stages": [],
+      "total_duration": null
+    },
+    "load": {
+      "purpose": "Validate SLAs at expected peak load (100%) for a sustained period.",
+      "stages": [
+        {
+          "duration": "5m",
+          "target": 1.0
+        },
+        {
+          "duration": "20m",
+          "target": 1.0
+        },
+        {
+          "duration": "2m",
+          "target": 0
+        }
+      ],
+      "total_duration": "27m"
+    },
+    "stress": {
+      "purpose": "Step beyond peak (50% -> 200%) to find the degradation point and how the system fails.",
+      "stages": [
+        {
+          "duration": "2m",
+          "target": 0.5
+        },
+        {
+          "duration": "5m",
+          "target": 0.5
+        },
+        {
+          "duration": "2m",
+          "target": 1.0
+        },
+        {
+          "duration": "5m",
+          "target": 1.0
+        },
+        {
+          "duration": "2m",
+          "target": 1.5
+        },
+        {
+          "duration": "5m",
+          "target": 1.5
+        },
+        {
+          "duration": "2m",
+          "target": 2.0
+        },
+        {
+          "duration": "5m",
+          "target": 2.0
+        },
+        {
+          "duration": "3m",
+          "target": 0
+        }
+      ],
+      "total_duration": "31m"
+    },
+    "spike": {
+      "purpose": "Sudden surge to 300% of peak (sale launch, batch release) and recovery back to normal.",
+      "stages": [
+        {
+          "duration": "2m",
+          "target": 0.3
+        },
+        {
+          "duration": "2m",
+          "target": 0.3
+        },
+        {
+          "duration": "30s",
+          "target": 3.0
+        },
+        {
+          "duration": "3m",
+          "target": 3.0
+        },
+        {
+          "duration": "30s",
+          "target": 0.3
+        },
+        {
+          "duration": "3m",
+          "target": 0.3
+        },
+        {
+          "duration": "1m",
+          "target": 0
+        }
+      ],
+      "total_duration": "12m"
+    },
+    "soak": {
+      "purpose": "80% of peak for hours to expose memory leaks, connection-pool exhaustion and resource creep.",
+      "stages": [
+        {
+          "duration": "5m",
+          "target": 0.8
+        },
+        {
+          "duration": "4h",
+          "target": 0.8
+        },
+        {
+          "duration": "5m",
+          "target": 0
+        }
+      ],
+      "total_duration": "4h10m"
+    },
+    "breakpoint": {
+      "purpose": "Linear ramp to 500% until the error-rate guard aborts - establishes maximum capacity.",
+      "stages": [
+        {
+          "duration": "30m",
+          "target": 5.0
+        }
+      ],
+      "abort_on_fail": true,
+      "total_duration": "30m"
+    }
+  },
+  "scenarios": [
+    {
+      "id": "SC-001",
+      "fn": "sc_001",
+      "name": "Login and view dashboard",
+      "kind": "api",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 23.8,
+      "requests_per_iteration": 6,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-001 01 Login",
+        "SC-001 02 Get current user",
+        "SC-001 03 Dashboard summary",
+        "SC-001 04 Unread count",
+        "SC-001 05 Dashboard refresh",
+        "SC-001 06 Logout"
+      ],
+      "share_pct": 30.0,
+      "users": 6,
+      "rate_per_min": 15.13
+    },
+    {
+      "id": "SC-002",
+      "fn": "sc_002",
+      "name": "Browse and search the market",
+      "kind": "api",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 38.8,
+      "requests_per_iteration": 6,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-002 01 Login",
+        "SC-002 02 List companies",
+        "SC-002 03 Holdings",
+        "SC-002 04 Price poll",
+        "SC-002 05 Search companies",
+        "SC-002 06 Price poll 2"
+      ],
+      "share_pct": 29.0,
+      "users": 6,
+      "rate_per_min": 8.97
+    },
+    {
+      "id": "SC-003",
+      "fn": "sc_003",
+      "name": "Place a BUY trade",
+      "kind": "api",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 18.8,
+      "requests_per_iteration": 6,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-003 01 Login",
+        "SC-003 02 Wallet balance",
+        "SC-003 03 Find stock",
+        "SC-003 04 Buy 1 share",
+        "SC-003 05 Trade history",
+        "SC-003 06 Dashboard after trade"
+      ],
+      "share_pct": 15.0,
+      "users": 3,
+      "rate_per_min": 9.57
+    },
+    {
+      "id": "SC-010",
+      "fn": "sc_010",
+      "name": "Login to dashboard (real browser)",
+      "kind": "web",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 16.0,
+      "requests_per_iteration": 0,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-010 01 Open login page",
+        "SC-010 02 Enter email",
+        "SC-010 03 Enter password",
+        "SC-010 04 Submit login",
+        "SC-010 05 Dashboard rendered"
+      ],
+      "share_pct": null,
+      "users": 1,
+      "rate_per_min": null
+    },
+    {
+      "id": "SC-005",
+      "fn": "sc_005",
+      "name": "Add funds to wallet",
+      "kind": "api",
+      "priority": "P2",
+      "sla": {
+        "p95_ms": 2500,
+        "p99_ms": 4000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 12.2,
+      "requests_per_iteration": 4,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-005 01 Login",
+        "SC-005 02 Transactions",
+        "SC-005 03 Add funds bank transfer",
+        "SC-005 04 Wallet balance"
+      ],
+      "share_pct": 8.0,
+      "users": 2,
+      "rate_per_min": 7.87
+    },
+    {
+      "id": "SC-004",
+      "fn": "sc_004",
+      "name": "Sell from holdings",
+      "kind": "api",
+      "priority": "P2",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 13.2,
+      "requests_per_iteration": 4,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-004 01 Login",
+        "SC-004 02 View holdings",
+        "SC-004 03 Sell 1 share",
+        "SC-004 04 Trade history"
+      ],
+      "share_pct": 7.0,
+      "users": 2,
+      "rate_per_min": 6.36
+    },
+    {
+      "id": "SC-008",
+      "fn": "sc_008",
+      "name": "Register a new account",
+      "kind": "api",
+      "priority": "P2",
+      "sla": {
+        "p95_ms": 1500,
+        "p99_ms": 3000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 5.6,
+      "requests_per_iteration": 2,
+      "data_file": null,
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-008 01 Register",
+        "SC-008 02 Dashboard first visit"
+      ],
+      "share_pct": 2.0,
+      "users": 1,
+      "rate_per_min": 4.29
+    },
+    {
+      "id": "SC-006",
+      "fn": "sc_006",
+      "name": "Download a trade invoice PDF",
+      "kind": "api",
+      "priority": "P2",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 9.9,
+      "requests_per_iteration": 3,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-006 01 Login",
+        "SC-006 02 Trade history",
+        "SC-006 03 Invoice PDF"
+      ],
+      "share_pct": 3.0,
+      "users": 1,
+      "rate_per_min": 3.64
+    },
+    {
+      "id": "SC-007",
+      "fn": "sc_007",
+      "name": "Read inbox messages",
+      "kind": "api",
+      "priority": "P2",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 10.2,
+      "requests_per_iteration": 4,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-007 01 Login",
+        "SC-007 02 Inbox list",
+        "SC-007 03 Mark read",
+        "SC-007 04 Unread count"
+      ],
+      "share_pct": 5.0,
+      "users": 1,
+      "rate_per_min": 5.88
+    },
+    {
+      "id": "SC-009",
+      "fn": "sc_009",
+      "name": "Update profile",
+      "kind": "api",
+      "priority": "P3",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 9.9,
+      "requests_per_iteration": 3,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-009 01 Login",
+        "SC-009 02 Get profile",
+        "SC-009 03 Save profile"
+      ],
+      "share_pct": 1.0,
+      "users": 1,
+      "rate_per_min": 1.21
+    }
+  ]
+}

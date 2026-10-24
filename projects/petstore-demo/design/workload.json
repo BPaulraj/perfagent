@@ -1,0 +1,308 @@
+{
+  "project": "petstore-demo",
+  "planned_peak_rps": 28.52,
+  "generated_at": "2026-10-24T11:03:57+05:30",
+  "model": "open (arrival-rate) - Little's Law sizing",
+  "nfr": {
+    "peak_concurrent_users": 100,
+    "browser_vus": 2,
+    "est_response_s": 0.3,
+    "error_rate": 0.01
+  },
+  "auth": {
+    "type": "none",
+    "token_env": "PERF_TOKEN",
+    "apikey_header": "X-API-Key",
+    "apikey_env": "PERF_API_KEY",
+    "username_env": "PERF_USER",
+    "password_env": "PERF_PASSWORD",
+    "login": {
+      "method": "POST",
+      "path": "/auth/login",
+      "body": {
+        "username": "{{env.PERF_USER}}",
+        "password": "{{env.PERF_PASSWORD}}"
+      },
+      "token_path": "token"
+    }
+  },
+  "profiles": {
+    "smoke": {
+      "purpose": "Verify scripts, data and environment work (1 VU, few iterations). Gate before every other test.",
+      "iterations": 2,
+      "stages": [],
+      "total_duration": null
+    },
+    "load": {
+      "purpose": "Validate SLAs at expected peak load (100%) for a sustained period.",
+      "stages": [
+        {
+          "duration": "5m",
+          "target": 1.0
+        },
+        {
+          "duration": "20m",
+          "target": 1.0
+        },
+        {
+          "duration": "2m",
+          "target": 0
+        }
+      ],
+      "total_duration": "27m"
+    },
+    "stress": {
+      "purpose": "Step beyond peak (50% -> 200%) to find the degradation point and how the system fails.",
+      "stages": [
+        {
+          "duration": "2m",
+          "target": 0.5
+        },
+        {
+          "duration": "5m",
+          "target": 0.5
+        },
+        {
+          "duration": "2m",
+          "target": 1.0
+        },
+        {
+          "duration": "5m",
+          "target": 1.0
+        },
+        {
+          "duration": "2m",
+          "target": 1.5
+        },
+        {
+          "duration": "5m",
+          "target": 1.5
+        },
+        {
+          "duration": "2m",
+          "target": 2.0
+        },
+        {
+          "duration": "5m",
+          "target": 2.0
+        },
+        {
+          "duration": "3m",
+          "target": 0
+        }
+      ],
+      "total_duration": "31m"
+    },
+    "spike": {
+      "purpose": "Sudden surge to 300% of peak (sale launch, batch release) and recovery back to normal.",
+      "stages": [
+        {
+          "duration": "2m",
+          "target": 0.3
+        },
+        {
+          "duration": "2m",
+          "target": 0.3
+        },
+        {
+          "duration": "30s",
+          "target": 3.0
+        },
+        {
+          "duration": "3m",
+          "target": 3.0
+        },
+        {
+          "duration": "30s",
+          "target": 0.3
+        },
+        {
+          "duration": "3m",
+          "target": 0.3
+        },
+        {
+          "duration": "1m",
+          "target": 0
+        }
+      ],
+      "total_duration": "12m"
+    },
+    "soak": {
+      "purpose": "80% of peak for hours to expose memory leaks, connection-pool exhaustion and resource creep.",
+      "stages": [
+        {
+          "duration": "5m",
+          "target": 0.8
+        },
+        {
+          "duration": "4h",
+          "target": 0.8
+        },
+        {
+          "duration": "5m",
+          "target": 0
+        }
+      ],
+      "total_duration": "4h10m"
+    },
+    "breakpoint": {
+      "purpose": "Linear ramp to 500% until the error-rate guard aborts - establishes maximum capacity.",
+      "stages": [
+        {
+          "duration": "30m",
+          "target": 5.0
+        }
+      ],
+      "abort_on_fail": true,
+      "total_duration": "30m"
+    }
+  },
+  "scenarios": [
+    {
+      "id": "SC-003",
+      "fn": "sc_003",
+      "name": "Customer login and view profile",
+      "kind": "api",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 7.9,
+      "requests_per_iteration": 3,
+      "data_file": "users.csv",
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-003 01 Login",
+        "SC-003 02 View profile",
+        "SC-003 03 Logout"
+      ],
+      "share_pct": 20.0,
+      "users": 20,
+      "rate_per_min": 151.9
+    },
+    {
+      "id": "SC-001",
+      "fn": "sc_001",
+      "name": "Browse available pets and view details",
+      "kind": "api",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 800,
+        "p99_ms": 1500,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 8.6,
+      "requests_per_iteration": 2,
+      "data_file": null,
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-001 01 List available pets",
+        "SC-001 02 View pet details"
+      ],
+      "share_pct": 45.0,
+      "users": 45,
+      "rate_per_min": 313.95
+    },
+    {
+      "id": "SC-002",
+      "fn": "sc_002",
+      "name": "Place an order for a pet",
+      "kind": "api",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1200,
+        "p99_ms": 2500,
+        "error_rate": 0.005,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 7.9,
+      "requests_per_iteration": 3,
+      "data_file": null,
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-002 01 Find available pet",
+        "SC-002 02 Place order",
+        "SC-002 03 Check order status"
+      ],
+      "share_pct": 15.0,
+      "users": 15,
+      "rate_per_min": 113.92
+    },
+    {
+      "id": "SC-007",
+      "fn": "sc_007",
+      "name": "Storefront page load (real browser)",
+      "kind": "web",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 4000
+      },
+      "iteration_seconds": 7.0,
+      "requests_per_iteration": 0,
+      "data_file": null,
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-007 01 Open home page",
+        "SC-007 02 Operations rendered"
+      ],
+      "share_pct": null,
+      "users": 2,
+      "rate_per_min": null
+    },
+    {
+      "id": "SC-004",
+      "fn": "sc_004",
+      "name": "Store inventory summary",
+      "kind": "api",
+      "priority": "P2",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 10.3,
+      "requests_per_iteration": 1,
+      "data_file": null,
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-004 01 Get inventory"
+      ],
+      "share_pct": 10.0,
+      "users": 10,
+      "rate_per_min": 58.25
+    },
+    {
+      "id": "SC-005",
+      "fn": "sc_005",
+      "name": "List a new pet for sale",
+      "kind": "api",
+      "priority": "P2",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 7.9,
+      "requests_per_iteration": 3,
+      "data_file": null,
+      "data_mode": "shared",
+      "step_tags": [
+        "SC-005 01 Create pet",
+        "SC-005 02 Verify pet",
+        "SC-005 03 Update pet"
+      ],
+      "share_pct": 10.0,
+      "users": 10,
+      "rate_per_min": 75.95
+    }
+  ]
+}

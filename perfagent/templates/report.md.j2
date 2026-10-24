@@ -1,0 +1,31 @@
+{% macro ms(v) %}{{ "%.0f" | format(v) if v is not none else "-" }}{% endmacro %}
+## {{ r.meta.test_type | upper }} test - {{ r.verdict }}
+
+Run `{{ r.meta.run_id }}` · {{ r.overall.duration_s }}s · {{ r.overall.requests }} requests · {{ r.overall.rps }} req/s · p95 {{ ms(r.overall.p95) }}ms · errors {{ "%.2f" | format((r.overall.error_rate or 0) * 100) }}% · dropped iterations {{ r.overall.dropped_iterations }}
+
+| Scenario | Iter | p95 ms | p99 ms | SLA p95 | Errors | SLA |
+|---|---:|---:|---:|---:|---:|---|
+{% for s in r.scenarios %}
+| {{ s.id }} {{ s.name }} | {{ s.iterations }} | {{ ms(s.p95) }} | {{ ms(s.p99) }} | {{ s.sla.p95_ms }} | {{ "%.2f%%" | format((s.error_rate or 0) * 100) }} | {{ "met" if s.sla_ok else "BREACHED" }} |
+{% endfor %}
+
+{% if r.findings %}
+**Analyst findings**
+{% for f in r.findings %}
+{{ loop.index }}. [{{ f.severity | default("Info") }}] {{ f.title }} - {{ f.recommendation }}
+{% endfor %}
+
+{% endif %}
+{% if r.errors %}
+**Errors:** {% for e in r.errors %}{{ e.count }}× {{ e.where }} ({{ e.error }}){{ "; " if not loop.last }}{% endfor %}
+
+
+{% endif %}
+**Observations**
+{% for n in r.observations %}
+- {{ n }}
+{% endfor %}
+{% if r.baseline %}
+
+**vs baseline {{ r.baseline.run_id }}:** {% for b in r.baseline.rows %}{{ b.id }} {{ "%+.1f%%" | format(b.delta_pct) }}{{ " (REGRESSION)" if b.regression }}{{ ", " if not loop.last }}{% endfor %}
+{% endif %}

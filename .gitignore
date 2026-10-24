@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+tools/
+projects/*/runs/
+projects/*/scripts/data/
+.env
+
+# per-project secrets (dotenv)
+projects/*/.env
+
+# secret test data (PINs, passwords) - never commit
+projects/*/data/*.secret.csv

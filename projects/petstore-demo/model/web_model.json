@@ -1,0 +1,445 @@
+{
+  "generated_at": "2026-10-24T09:10:34+05:30",
+  "start_url": "https://petstore3.swagger.io",
+  "stats": {
+    "pages": 3,
+    "forms": 2,
+    "api_calls": 1
+  },
+  "pages": [
+    {
+      "url": "https://petstore3.swagger.io",
+      "path": "/",
+      "depth": 0,
+      "status": 200,
+      "title": "Swagger UI",
+      "timing": {
+        "ttfb_ms": 3509,
+        "dom_content_loaded_ms": 6182,
+        "load_ms": 6212,
+        "transfer_kb": 1,
+        "fcp_ms": 6292,
+        "resources": 8
+      },
+      "links": [
+        "/",
+        "/api/v3/openapi.json"
+      ],
+      "forms": [
+        {
+          "selector": null,
+          "action": null,
+          "method": "get",
+          "fields": [
+            {
+              "selector": "#download-url-input",
+              "tag": "input",
+              "type": "text",
+              "name": null,
+              "placeholder": null,
+              "required": false,
+              "label": null
+            }
+          ],
+          "submit": {
+            "selector": null,
+            "text": "Explore"
+          }
+        }
+      ],
+      "buttons": [
+        {
+          "selector": null,
+          "text": "Explore"
+        },
+        {
+          "selector": null,
+          "text": "Authorize"
+        },
+        {
+          "selector": null,
+          "text": "PUT\n/pet\nUpdate an existing pet."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "put ​/pet"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/pet\nAdd a new pet to the store."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "post ​/pet"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/pet/findByStatus\nFinds Pets by status."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "get ​/pet​/findByStatus"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/pet/findByTags\nFinds Pets by tags."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "get ​/pet​/findByTags"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/pet/{petId}\nFind pet by ID."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "get ​/pet​/{petId}"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/pet/{petId}\nUpdates a pet in the store with form data."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "post ​/pet​/{petId}"
+        },
+        {
+          "selector": null,
+          "text": "DELETE\n/pet/{petId}\nDeletes a pet."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "delete ​/pet​/{petId}"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/pet/{petId}/uploadImage\nUploads an image."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "post ​/pet​/{petId}​/uploadImage"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/store/inventory\nReturns pet inventories by status."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "get ​/store​/inventory"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/store/order\nPlace an order for a pet."
+        },
+        {
+          "selector": null,
+          "text": "post ​/store​/order"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/store/order/{orderId}\nFind purchase order by ID."
+        },
+        {
+          "selector": null,
+          "text": "get ​/store​/order​/{orderId}"
+        },
+        {
+          "selector": null,
+          "text": "DELETE\n/store/order/{orderId}\nDelete purchase order by ident"
+        },
+        {
+          "selector": null,
+          "text": "delete ​/store​/order​/{orderId}"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/user\nCreate user."
+        },
+        {
+          "selector": null,
+          "text": "post ​/user"
+        }
+      ],
+      "headings": [
+        "Swagger Petstore - OpenAPI 3.0\n 1.0.27 \nOAS 3.0"
+      ],
+      "nav": []
+    },
+    {
+      "url": "https://petstore3.swagger.io/api/v3/openapi.json",
+      "path": "/api/v3/openapi.json",
+      "depth": 1,
+      "status": 200,
+      "title": "",
+      "timing": {
+        "ttfb_ms": 237,
+        "dom_content_loaded_ms": 265,
+        "load_ms": 265,
+        "transfer_kb": 17,
+        "fcp_ms": 280,
+        "resources": 0
+      },
+      "links": [],
+      "forms": [],
+      "buttons": [],
+      "headings": [],
+      "nav": []
+    },
+    {
+      "url": "https://petstore3.swagger.io/",
+      "path": "/",
+      "depth": 1,
+      "status": 200,
+      "title": "Swagger UI",
+      "timing": {
+        "ttfb_ms": 1,
+        "dom_content_loaded_ms": 244,
+        "load_ms": 255,
+        "transfer_kb": 0,
+        "fcp_ms": 296,
+        "resources": 8
+      },
+      "links": [
+        "/",
+        "/api/v3/openapi.json"
+      ],
+      "forms": [
+        {
+          "selector": null,
+          "action": null,
+          "method": "get",
+          "fields": [
+            {
+              "selector": "#download-url-input",
+              "tag": "input",
+              "type": "text",
+              "name": null,
+              "placeholder": null,
+              "required": false,
+              "label": null
+            }
+          ],
+          "submit": {
+            "selector": null,
+            "text": "Explore"
+          }
+        }
+      ],
+      "buttons": [
+        {
+          "selector": null,
+          "text": "Explore"
+        },
+        {
+          "selector": null,
+          "text": "Authorize"
+        },
+        {
+          "selector": null,
+          "text": "PUT\n/pet\nUpdate an existing pet."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "put ​/pet"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/pet\nAdd a new pet to the store."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "post ​/pet"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/pet/findByStatus\nFinds Pets by status."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "get ​/pet​/findByStatus"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/pet/findByTags\nFinds Pets by tags."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "get ​/pet​/findByTags"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/pet/{petId}\nFind pet by ID."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "get ​/pet​/{petId}"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/pet/{petId}\nUpdates a pet in the store with form data."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "post ​/pet​/{petId}"
+        },
+        {
+          "selector": null,
+          "text": "DELETE\n/pet/{petId}\nDeletes a pet."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "delete ​/pet​/{petId}"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/pet/{petId}/uploadImage\nUploads an image."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "post ​/pet​/{petId}​/uploadImage"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/store/inventory\nReturns pet inventories by status."
+        },
+        {
+          "selector": null,
+          "text": "authorization button unlocked"
+        },
+        {
+          "selector": null,
+          "text": "get ​/store​/inventory"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/store/order\nPlace an order for a pet."
+        },
+        {
+          "selector": null,
+          "text": "post ​/store​/order"
+        },
+        {
+          "selector": null,
+          "text": "GET\n/store/order/{orderId}\nFind purchase order by ID."
+        },
+        {
+          "selector": null,
+          "text": "get ​/store​/order​/{orderId}"
+        },
+        {
+          "selector": null,
+          "text": "DELETE\n/store/order/{orderId}\nDelete purchase order by ident"
+        },
+        {
+          "selector": null,
+          "text": "delete ​/store​/order​/{orderId}"
+        },
+        {
+          "selector": null,
+          "text": "POST\n/user\nCreate user."
+        },
+        {
+          "selector": null,
+          "text": "post ​/user"
+        }
+      ],
+      "headings": [
+        "Swagger Petstore - OpenAPI 3.0\n 1.0.27 \nOAS 3.0"
+      ],
+      "nav": []
+    }
+  ],
+  "api_calls": [
+    {
+      "method": "GET",
+      "host": "petstore3.swagger.io",
+      "path": "/api/v3/openapi.json",
+      "statuses": [
+        200
+      ],
+      "seen_on": [
+        "/"
+      ],
+      "count": 2
+    }
+  ],
+  "navigation_edges": [
+    [
+      "/",
+      "/"
+    ],
+    [
+      "/",
+      "/api/v3/openapi.json"
+    ]
+  ]
+}

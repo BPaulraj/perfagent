@@ -1,0 +1,22 @@
+{
+  // GitHub Copilot: load AGENTS.md, .github/instructions, prompt files and skills
+  "chat.useAgentsMdFile": true,
+  "chat.promptFiles": true,
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+
+  // Auto-approve only read-only / local-artefact perfagent commands in agent mode.
+  // Anything that sends load (run without --dry-run), records approvals (catalog approve/reject/defer)
+  // or sets baselines still asks you first - that is the human gate.
+  "chat.tools.terminal.autoApprove": {
+    "/^python -m perfagent (discover|traffic|design|generate|report|runs|agents)\\b/": true,
+    "/^python -m perfagent catalog \\S+ (score|status|review)\\b/": true,
+    "/^python -m perfagent run \\S+ .*--dry-run\\b/": true
+  },
+
+  "files.associations": {
+    "*.js.j2": "javascript",
+    "*.md.j2": "markdown",
+    "*.html.j2": "html"
+  },
+  "yaml.schemas": {}
+}

@@ -1,0 +1,247 @@
+{
+  "project": "partial-pin-example",
+  "planned_peak_rps": 2.59,
+  "generated_at": "2026-10-24T11:05:35+05:30",
+  "model": "open (arrival-rate) - Little's Law sizing",
+  "nfr": {
+    "peak_concurrent_users": 10,
+    "browser_vus": 1,
+    "est_response_s": 0.3,
+    "error_rate": 0.01
+  },
+  "auth": {
+    "type": "none",
+    "token_env": "PERF_TOKEN",
+    "apikey_header": "X-API-Key",
+    "apikey_env": "PERF_API_KEY",
+    "username_env": "PERF_USER",
+    "password_env": "PERF_PASSWORD",
+    "login": {
+      "method": "POST",
+      "path": "/auth/login",
+      "body": {
+        "username": "{{env.PERF_USER}}",
+        "password": "{{env.PERF_PASSWORD}}"
+      },
+      "token_path": "token"
+    }
+  },
+  "profiles": {
+    "smoke": {
+      "purpose": "Verify scripts, data and environment work (1 VU, few iterations). Gate before every other test.",
+      "iterations": 2,
+      "stages": [],
+      "total_duration": null
+    },
+    "load": {
+      "purpose": "Validate SLAs at expected peak load (100%) for a sustained period.",
+      "stages": [
+        {
+          "duration": "5m",
+          "target": 1.0
+        },
+        {
+          "duration": "20m",
+          "target": 1.0
+        },
+        {
+          "duration": "2m",
+          "target": 0
+        }
+      ],
+      "total_duration": "27m"
+    },
+    "stress": {
+      "purpose": "Step beyond peak (50% -> 200%) to find the degradation point and how the system fails.",
+      "stages": [
+        {
+          "duration": "2m",
+          "target": 0.5
+        },
+        {
+          "duration": "5m",
+          "target": 0.5
+        },
+        {
+          "duration": "2m",
+          "target": 1.0
+        },
+        {
+          "duration": "5m",
+          "target": 1.0
+        },
+        {
+          "duration": "2m",
+          "target": 1.5
+        },
+        {
+          "duration": "5m",
+          "target": 1.5
+        },
+        {
+          "duration": "2m",
+          "target": 2.0
+        },
+        {
+          "duration": "5m",
+          "target": 2.0
+        },
+        {
+          "duration": "3m",
+          "target": 0
+        }
+      ],
+      "total_duration": "31m"
+    },
+    "spike": {
+      "purpose": "Sudden surge to 300% of peak (sale launch, batch release) and recovery back to normal.",
+      "stages": [
+        {
+          "duration": "2m",
+          "target": 0.3
+        },
+        {
+          "duration": "2m",
+          "target": 0.3
+        },
+        {
+          "duration": "30s",
+          "target": 3.0
+        },
+        {
+          "duration": "3m",
+          "target": 3.0
+        },
+        {
+          "duration": "30s",
+          "target": 0.3
+        },
+        {
+          "duration": "3m",
+          "target": 0.3
+        },
+        {
+          "duration": "1m",
+          "target": 0
+        }
+      ],
+      "total_duration": "12m"
+    },
+    "soak": {
+      "purpose": "80% of peak for hours to expose memory leaks, connection-pool exhaustion and resource creep.",
+      "stages": [
+        {
+          "duration": "5m",
+          "target": 0.8
+        },
+        {
+          "duration": "4h",
+          "target": 0.8
+        },
+        {
+          "duration": "5m",
+          "target": 0
+        }
+      ],
+      "total_duration": "4h10m"
+    },
+    "breakpoint": {
+      "purpose": "Linear ramp to 500% until the error-rate guard aborts - establishes maximum capacity.",
+      "stages": [
+        {
+          "duration": "30m",
+          "target": 5.0
+        }
+      ],
+      "abort_on_fail": true,
+      "total_duration": "30m"
+    }
+  },
+  "scenarios": [
+    {
+      "id": "SC-001",
+      "fn": "sc_001",
+      "name": "Partial-PIN login via API then view accounts",
+      "kind": "api",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 18.5,
+      "requests_per_iteration": 5,
+      "data_file": "users.secret.csv",
+      "data_mode": "unique-per-vu",
+      "step_tags": [
+        "SC-001 01 Login step 1 account and DOB",
+        "SC-001 02 Pick requested PIN digits",
+        "SC-001 03 Login step 2 PIN digits",
+        "SC-001 04 List accounts",
+        "SC-001 05 Account transactions",
+        "SC-001 06 Logout"
+      ],
+      "share_pct": 70.0,
+      "users": 7,
+      "rate_per_min": 22.7
+    },
+    {
+      "id": "SC-002",
+      "fn": "sc_002",
+      "name": "Partial-PIN login via HTML forms (no browser)",
+      "kind": "api",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 12.9,
+      "requests_per_iteration": 3,
+      "data_file": "users.secret.csv",
+      "data_mode": "unique-per-vu",
+      "step_tags": [
+        "SC-002 01 Open login page",
+        "SC-002 02 Submit account and DOB",
+        "SC-002 03 Submit PIN digits"
+      ],
+      "share_pct": 30.0,
+      "users": 3,
+      "rate_per_min": 13.95
+    },
+    {
+      "id": "SC-003",
+      "fn": "sc_003",
+      "name": "Partial-PIN login in a real browser",
+      "kind": "web",
+      "priority": "P1",
+      "sla": {
+        "p95_ms": 1000,
+        "p99_ms": 2000,
+        "error_rate": 0.01,
+        "lcp_ms": 2500
+      },
+      "iteration_seconds": 26.0,
+      "requests_per_iteration": 0,
+      "data_file": "users.secret.csv",
+      "data_mode": "unique-per-vu",
+      "step_tags": [
+        "SC-003 01 Open login page",
+        "SC-003 02 Enter account number",
+        "SC-003 03 Enter DOB",
+        "SC-003 04 Continue",
+        "SC-003 05 Read requested positions",
+        "SC-003 06 Enter 1st requested digit",
+        "SC-003 07 Enter 2nd requested digit",
+        "SC-003 08 Enter 3rd requested digit",
+        "SC-003 09 Log in",
+        "SC-003 10 Accounts shown"
+      ],
+      "share_pct": null,
+      "users": 1,
+      "rate_per_min": null
+    }
+  ]
+}

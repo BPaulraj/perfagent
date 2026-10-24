@@ -1,0 +1,236 @@
+{
+  "generated_at": "2026-10-24T09:42:30+05:30",
+  "start_url": "http://localhost:5173",
+  "stats": {
+    "pages": 3,
+    "forms": 3,
+    "api_calls": 1
+  },
+  "pages": [
+    {
+      "url": "http://localhost:5173/",
+      "path": "/",
+      "depth": 0,
+      "status": 200,
+      "title": "StockBroker Demo",
+      "timing": {
+        "ttfb_ms": 5,
+        "dom_content_loaded_ms": 82,
+        "load_ms": 83,
+        "transfer_kb": 1,
+        "fcp_ms": 108,
+        "resources": 38
+      },
+      "links": [
+        "/register"
+      ],
+      "forms": [
+        {
+          "selector": null,
+          "action": null,
+          "method": "get",
+          "fields": [
+            {
+              "selector": "#email",
+              "tag": "input",
+              "type": "email",
+              "name": "email",
+              "placeholder": null,
+              "required": false,
+              "label": "Email"
+            },
+            {
+              "selector": "#password",
+              "tag": "input",
+              "type": "password",
+              "name": "password",
+              "placeholder": null,
+              "required": false,
+              "label": "Password"
+            }
+          ],
+          "submit": {
+            "selector": null,
+            "text": "Log in"
+          }
+        }
+      ],
+      "buttons": [
+        {
+          "selector": null,
+          "text": "Log in"
+        }
+      ],
+      "headings": [
+        "Welcome back"
+      ],
+      "nav": []
+    },
+    {
+      "url": "http://localhost:5173/register",
+      "path": "/register",
+      "depth": 1,
+      "status": 200,
+      "title": "StockBroker Demo",
+      "timing": {
+        "ttfb_ms": 3,
+        "dom_content_loaded_ms": 32,
+        "load_ms": 32,
+        "transfer_kb": 1,
+        "fcp_ms": 52,
+        "resources": 38
+      },
+      "links": [
+        "/login"
+      ],
+      "forms": [
+        {
+          "selector": null,
+          "action": null,
+          "method": "get",
+          "fields": [
+            {
+              "selector": "#name",
+              "tag": "input",
+              "type": "text",
+              "name": "name",
+              "placeholder": null,
+              "required": false,
+              "label": "Full name"
+            },
+            {
+              "selector": "#email",
+              "tag": "input",
+              "type": "email",
+              "name": "email",
+              "placeholder": null,
+              "required": false,
+              "label": "Email"
+            },
+            {
+              "selector": "#phone",
+              "tag": "input",
+              "type": "tel",
+              "name": "phone",
+              "placeholder": null,
+              "required": false,
+              "label": "Phone"
+            },
+            {
+              "selector": "#password",
+              "tag": "input",
+              "type": "password",
+              "name": "password",
+              "placeholder": null,
+              "required": false,
+              "label": "Password"
+            }
+          ],
+          "submit": {
+            "selector": null,
+            "text": "Create account"
+          }
+        }
+      ],
+      "buttons": [
+        {
+          "selector": null,
+          "text": "Create account"
+        }
+      ],
+      "headings": [
+        "Create your account"
+      ],
+      "nav": []
+    },
+    {
+      "url": "http://localhost:5173/login",
+      "path": "/login",
+      "depth": 2,
+      "status": 200,
+      "title": "StockBroker Demo",
+      "timing": {
+        "ttfb_ms": 4,
+        "dom_content_loaded_ms": 34,
+        "load_ms": 35,
+        "transfer_kb": 1,
+        "fcp_ms": 56,
+        "resources": 38
+      },
+      "links": [
+        "/register"
+      ],
+      "forms": [
+        {
+          "selector": null,
+          "action": null,
+          "method": "get",
+          "fields": [
+            {
+              "selector": "#email",
+              "tag": "input",
+              "type": "email",
+              "name": "email",
+              "placeholder": null,
+              "required": false,
+              "label": "Email"
+            },
+            {
+              "selector": "#password",
+              "tag": "input",
+              "type": "password",
+              "name": "password",
+              "placeholder": null,
+              "required": false,
+              "label": "Password"
+            }
+          ],
+          "submit": {
+            "selector": null,
+            "text": "Log in"
+          }
+        }
+      ],
+      "buttons": [
+        {
+          "selector": null,
+          "text": "Log in"
+        }
+      ],
+      "headings": [
+        "Welcome back"
+      ],
+      "nav": []
+    }
+  ],
+  "api_calls": [
+    {
+      "method": "GET",
+      "host": "localhost:5173",
+      "path": "/api/auth/me",
+      "statuses": [
+        401
+      ],
+      "seen_on": [
+        "/",
+        "/login",
+        "/register"
+      ],
+      "count": 3
+    }
+  ],
+  "navigation_edges": [
+    [
+      "/",
+      "/register"
+    ],
+    [
+      "/login",
+      "/register"
+    ],
+    [
+      "/register",
+      "/login"
+    ]
+  ]
+}

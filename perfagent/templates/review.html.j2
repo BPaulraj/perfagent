@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scenario Review</title>
+{% include "_style.html.j2" %}
+</head>
+<body><main>
+<h1>Scenario Review - {{ project.name }}</h1>
+<div class="sub">Generated {{ generated }} · Environment: {{ project.environment }} · {{ catalog.scenarios | length }} candidate scenarios</div>
+
+{% set approved = catalog.scenarios | selectattr("status", "equalto", "approved") | list %}
+<div class="grid">
+  <div class="card kpi"><div class="v">{{ catalog.scenarios | length }}</div><div class="l">Candidates</div></div>
+  <div class="card kpi"><div class="v P1">{{ catalog.scenarios | selectattr("priority", "equalto", "P1") | list | length }}</div><div class="l">P1 - must test</div></div>
+  <div class="card kpi"><div class="v">{{ approved | length }}</div><div class="l">Approved</div></div>
+  <div class="card kpi"><div class="v">{{ approved_share }}%</div><div class="l">Approved workload share</div></div>
+  {% if coverage %}<div class="card kpi"><div class="v">{{ coverage.pct }}%</div><div class="l">API endpoint coverage ({{ coverage.covered }}/{{ coverage.total }})</div></div>{% endif %}
+</div>
+
+<h2>How to decide</h2>
+<div class="card">
+  Priority score = <b>{{ (weights.business_criticality * 100) | int }}%</b> business criticality + <b>{{ (weights.frequency * 100) | int }}%</b> usage frequency + <b>{{ (weights.technical_risk * 100) | int }}%</b> technical risk (each rated 1-5), scaled to 100.
+  P1 ≥ 75 · P2 ≥ 50 · P3 &lt; 50.
+  <br>Approve in Claude Code chat (e.g. <i>"approve all P1 and SC-005"</i>) or with
+  <code>python -m perfagent catalog {{ project.name }} approve SC-001 SC-002</code> / <code>--priority P1</code>.
+  Edit ratings, SLAs and workload share directly in <code>catalog.yaml</code>, then re-run <code>catalog score</code>.
+</div>
+
+{% if problems %}
+<h2>Validation</h2>
+<div class="card"><ul>{% for p in problems %}<li class="warn">{{ p }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<h2>Ranked scenarios</h2>
+<div class="table-wrap"><table>
+<tr><th>#</th><th>ID</th><th>Scenario</th><th>Pri</th><th class="n">Score</th><th>Crit / Freq / Risk</th><th>Type</th><th class="n">Share</th><th>SLA p95</th><th>Status</th></tr>
+{% for s in catalog.scenarios %}
+<tr>
+  <td>{{ s.rank }}</td><td><b>{{ s.id }}</b></td>
+  <td><b>{{ s.name }}</b><div class="muted">{{ s.description }}</div>
+    <details><summary>{{ s.steps | length }} steps · rationale</summary>
+      <p><i>{{ s.rationale }}</i></p>
+      <ol>{% for st in s.steps %}<li>{% if st.kind == "web" %}🌐 {{ st.action }} {{ st.url or st.selector }}{% else %}<code>{{ st.method }} {{ st.path }}</code>{% endif %} - {{ st.name }}{% if st.extract %} <span class="muted">→ extracts {{ st.extract | list | join(", ") }}</span>{% endif %}</li>{% endfor %}</ol>
+      {% if s.data_requirements %}<p class="muted">Test data: {{ s.data_requirements | join("; ") }}</p>{% endif %}
+      {% if s.risks %}<p class="muted">Risks: {{ s.risks | join("; ") }}</p>{% endif %}
+    </details>
+  </td>
+  <td><span class="badge {{ s.priority }}">{{ s.priority }}</span></td>
+  <td class="n">{{ s.priority_score }}</td>
+  <td>{{ s.business_criticality }} / {{ s.frequency }} / {{ s.technical_risk }}</td>
+  <td>{{ s.type }}</td>
+  <td class="n">{{ s.workload_share | default("-") }}%</td>
+  <td>{{ (s.sla or {}).p95_ms | default("default") }}{% if (s.sla or {}).p95_ms %} ms{% endif %}</td>
+  <td><span class="badge {{ 'pass' if s.status == 'approved' else ('fail' if s.status == 'rejected' else 'warn') }}">{{ s.status }}</span></td>
+</tr>
+{% endfor %}
+</table></div>
+
+{% if coverage and coverage.uncovered %}
+<h2>Endpoints not covered by any scenario ({{ coverage.uncovered | length }})</h2>
+<div class="card"><details><summary>Show list</summary><ul>{% for e in coverage.uncovered %}<li><code>{{ e }}</code></li>{% endfor %}</ul></details>
+<p class="muted">Not every endpoint needs load. Low-traffic admin or one-off endpoints are usually left out on purpose; record the reason in the test plan.</p></div>
+{% endif %}
+</main></body></html>

@@ -1,0 +1,30 @@
+{{ marker }}
+import { browser } from 'k6/browser';
+import { apiStep, computeStep, webStep, newContext, webThink } from '../lib/common.js';
+
+/**
+ * {{ s.id }} - {{ s.name }}  (real browser: Core Web Vitals + front-end timings)
+ * Priority {{ s.priority }} (score {{ s.priority_score }}) | {{ w.users }} browser VU(s)
+ * SLA: LCP p75 < {{ w.sla.lcp_ms }}ms, step failures < {{ (w.sla.error_rate * 100) | round(2) }}%
+ * {{ s.description | default('', true) | replace('\n', ' ') }}
+ */
+export async function {{ w.fn }}(data) {
+  const ctx = newContext(data, {{ s.id | tojs }});
+  const page = await browser.newPage();
+  try {
+{% for st in steps %}
+
+    // {{ loop.index }}. {{ st.name }}
+{% if st.kind == 'compute' %}
+    if (!computeStep(ctx, {{ st.js | tojs }})) return;
+{% elif st.kind == 'api' %}
+    if (!apiStep(ctx, {{ st.js | tojs }})) return;
+{% else %}
+    if (!(await webStep(page, ctx, {{ st.js | tojs }}))) return;
+{% endif %}
+    await webThink(page, {{ st.think_time }});
+{% endfor %}
+  } finally {
+    await page.close();
+  }
+}

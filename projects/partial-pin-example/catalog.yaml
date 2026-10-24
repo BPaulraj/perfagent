@@ -1,0 +1,248 @@
+project: partial-pin-example
+assumptions:
+- Target is the local mock bank (setup/mock_bank.py) that reproduces a two-step partial-PIN login
+- Fake test accounts in data/users.secret.csv (git-ignored); real projects must use non-production test accounts
+key_risks:
+- Account lockout after 3 wrong PIN attempts - a broken script locks test accounts; smoke first, one account per
+  VU
+- 'Concurrent logins to the same account can invalidate sessions - data_mode: unique-per-vu'
+scenarios:
+- id: SC-001
+  name: Partial-PIN login via API then view accounts
+  type: api
+  description: Step 1 account number + date of birth returns 3 random PIN positions; step 2 sends those digits;
+    then accounts and transactions
+  rationale: Login gate for every customer session; challenge generation and PIN verification (HSM-style) are classic
+    banking bottlenecks
+  business_criticality: 5
+  frequency: 5
+  technical_risk: 4
+  workload_share: 70
+  data_file: users.secret.csv
+  data_mode: unique-per-vu
+  status: approved
+  review:
+    decision: approved
+    note: framework example for partial-PIN login
+  steps:
+  - name: Login step 1 account and DOB
+    method: POST
+    path: /api/login/start
+    body:
+      accountNumber: '{{account_number}}'
+      dob: '{{dob}}'
+    extract:
+      challengeId: challengeId
+      positions: positions
+    expect:
+    - 200
+    think_time: 4
+  - name: Pick requested PIN digits
+    kind: compute
+    compute:
+      pinDigits:
+        fn: partialPin
+        args:
+        - '{{pin}}'
+        - '{{positions}}'
+    think_time: 0
+  - name: Login step 2 PIN digits
+    method: POST
+    path: /api/login/verify
+    body:
+      challengeId: '{{challengeId}}'
+      digits: '{{pinDigits}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: List accounts
+    method: GET
+    path: /api/accounts
+    extract:
+      accountId:
+        from: json
+        path: accounts
+        random: true
+        field: id
+    expect:
+    - 200
+    think_time: 5
+  - name: Account transactions
+    method: GET
+    path: /api/accounts/{accountId}/transactions
+    expect:
+    - 200
+    think_time: 5
+  - name: Logout
+    method: POST
+    path: /api/logout
+    expect:
+    - 204
+    think_time: 1
+  priority_score: 95
+  priority: P1
+  rank: 1
+- id: SC-002
+  name: Partial-PIN login via HTML forms (no browser)
+  type: api
+  description: 'Server-rendered pages: CSRF token from HTML, form posts, redirects, PIN positions read from the
+    page text'
+  rationale: Same journey at protocol level for apps without a JSON login API - cheap to scale to many users
+  business_criticality: 5
+  frequency: 4
+  technical_risk: 4
+  workload_share: 30
+  data_file: users.secret.csv
+  data_mode: unique-per-vu
+  status: approved
+  review:
+    decision: approved
+    note: framework example for partial-PIN login
+  steps:
+  - name: Open login page
+    method: GET
+    path: /login
+    extract:
+      csrf:
+        from: regex
+        pattern: name="csrf" value="([^"]+)"
+    expect:
+    - 200
+    think_time: 3
+  - name: Submit account and DOB
+    method: POST
+    path: /login
+    form:
+      accountNumber: '{{account_number}}'
+      dob: '{{dob}}'
+      csrf: '{{csrf}}'
+    extract:
+      positions:
+        from: regex
+        pattern: id="pin-prompt">([^<]+)<
+      csrf:
+        from: regex
+        pattern: name="csrf" value="([^"]+)"
+    compute:
+      pinDigits:
+        fn: partialPin
+        args:
+        - '{{pin}}'
+        - '{{positions}}'
+    expect:
+    - 200
+    think_time: 4
+  - name: Submit PIN digits
+    method: POST
+    path: /login/pin
+    compute:
+      pinDigits:
+        fn: partialPin
+        args:
+        - '{{pin}}'
+        - '{{positions}}'
+    form:
+      pin1: '{{pinDigits.0}}'
+      pin2: '{{pinDigits.1}}'
+      pin3: '{{pinDigits.2}}'
+      csrf: '{{csrf}}'
+    assert_text: Welcome
+    expect:
+    - 200
+    think_time: 5
+  priority_score: 88
+  priority: P1
+  rank: 2
+- id: SC-003
+  name: Partial-PIN login in a real browser
+  type: web
+  description: Real Chromium user types account number and DOB, reads which PIN digits are requested and enters
+    them
+  rationale: End-user experience of the login journey (Core Web Vitals, front-end timings)
+  business_criticality: 5
+  frequency: 4
+  technical_risk: 3
+  data_file: users.secret.csv
+  data_mode: unique-per-vu
+  status: approved
+  review:
+    decision: approved
+    note: framework example for partial-PIN login
+  steps:
+  - name: Open login page
+    kind: web
+    action: goto
+    url: /login
+    think_time: 1
+  - name: Enter account number
+    kind: web
+    action: fill
+    selector: '#accountNumber'
+    value: '{{account_number}}'
+    think_time: 0
+  - name: Enter DOB
+    kind: web
+    action: fill
+    selector: '#dob'
+    value: '{{dob}}'
+    think_time: 1
+  - name: Continue
+    kind: web
+    action: click
+    selector: '#continue'
+    navigates: true
+    think_time: 1
+  - name: Read requested positions
+    kind: web
+    action: extract
+    selector: '#pin-prompt'
+    var: positions
+    think_time: 0
+  - name: Enter 1st requested digit
+    kind: web
+    action: fill
+    selector: '#pin1'
+    compute:
+      pinDigits:
+        fn: partialPin
+        args:
+        - '{{pin}}'
+        - '{{positions}}'
+    value: '{{pinDigits.0}}'
+    think_time: 0
+  - name: Enter 2nd requested digit
+    kind: web
+    action: fill
+    selector: '#pin2'
+    value: '{{pinDigits.1}}'
+    think_time: 0
+  - name: Enter 3rd requested digit
+    kind: web
+    action: fill
+    selector: '#pin3'
+    value: '{{pinDigits.2}}'
+    think_time: 1
+  - name: Log in
+    kind: web
+    action: click
+    selector: '#login'
+    navigates: true
+    think_time: 0
+  - name: Accounts shown
+    kind: web
+    action: waitFor
+    selector: '#welcome'
+    think_time: 2
+  priority_score: 83
+  priority: P1
+  rank: 3
+scoring:
+  weights:
+    business_criticality: 0.4
+    frequency: 0.35
+    technical_risk: 0.25
+  bands:
+    P1: '>= 75'
+    P2: '>= 50'
+    P3: '>= 0'
+updated_at: '2026-10-24T11:05:34+05:30'

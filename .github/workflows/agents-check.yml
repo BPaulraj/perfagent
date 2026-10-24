@@ -1,0 +1,22 @@
+# Fails the PR if Copilot / Claude customisation files drift apart or skills are invalid.
+name: Agent customisation check
+
+on:
+  pull_request:
+    paths: [AGENTS.md, CLAUDE.md, ".github/**", ".claude/**", "perfagent/agents_sync.py"]
+  push:
+    branches: [main]
+    paths: [AGENTS.md, CLAUDE.md, ".github/**", ".claude/**", "perfagent/agents_sync.py"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml jinja2 requests
+      - run: python -m perfagent agents check

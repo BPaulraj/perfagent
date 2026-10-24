@@ -1,0 +1,63 @@
+# Run a perfagent test from CI. Smoke runs freely; heavier tests run in the `perf-load` environment,
+# which should have required reviewers configured (Settings > Environments) - the CI version of the human go/no-go.
+# Credentials come from repository/environment secrets, never from files.
+name: Performance test
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Project folder under projects/
+        required: true
+        default: petstore-demo
+      test_type:
+        description: Test type
+        type: choice
+        options: [smoke, load, stress, spike, soak, breakpoint]
+        default: smoke
+      scale:
+        description: Load scale factor
+        default: "1.0"
+
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.test_type == 'smoke' && 'perf-smoke' || 'perf-load' }}
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    env:
+      PERF_TOKEN: ${{ secrets.PERF_TOKEN }}
+      PERF_API_KEY: ${{ secrets.PERF_API_KEY }}
+      PERF_USER: ${{ secrets.PERF_USER }}
+      PERF_PASSWORD: ${{ secrets.PERF_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: grafana/setup-k6-action@v1
+
+      - name: Generate scripts from the approved catalog
+        run: |
+          python -m perfagent design "${{ inputs.project }}"
+          python -m perfagent generate "${{ inputs.project }}"
+
+      - name: Run ${{ inputs.test_type }} test
+        run: python -m perfagent run "${{ inputs.project }}" --type "${{ inputs.test_type }}" --scale "${{ inputs.scale }}"
+
+      - name: Publish summary
+        if: always()
+        run: |
+          latest=$(ls -1d projects/${{ inputs.project }}/runs/*/ 2>/dev/null | tail -1)
+          [ -n "$latest" ] && [ -f "$latest/report.md" ] && cat "$latest/report.md" >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload run artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-${{ inputs.project }}-${{ inputs.test_type }}-${{ github.run_number }}
+          path: projects/${{ inputs.project }}/runs/
+          retention-days: 30

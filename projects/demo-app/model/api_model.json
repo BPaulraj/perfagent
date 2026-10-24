@@ -1,0 +1,700 @@
+{
+  "generated_at": "2026-10-24T09:42:28+05:30",
+  "source": "projects/demo-app/model/server-openapi.yaml",
+  "spec_version": "3.0.3",
+  "title": "StockBroker Demo - web backend (cookie auth)",
+  "description": "",
+  "base_url": "http://localhost:4000/api",
+  "security_schemes": {
+    "cookieAuth": {
+      "type": "apiKey",
+      "scheme": null,
+      "in": "cookie",
+      "name": "token"
+    }
+  },
+  "stats": {
+    "endpoints": 19,
+    "resources": 9,
+    "by_kind": {
+      "read": 12,
+      "create": 5,
+      "update": 2,
+      "delete": 0
+    },
+    "auth_endpoints": [
+      "POST /auth/register",
+      "POST /auth/login",
+      "POST /auth/logout",
+      "GET /auth/me",
+      "PUT /auth/profile"
+    ]
+  },
+  "resources": {
+    "health": {
+      "endpoints": [
+        "GET /health"
+      ],
+      "crud": [
+        "read"
+      ],
+      "tags": []
+    },
+    "auth": {
+      "endpoints": [
+        "POST /auth/register",
+        "POST /auth/login",
+        "POST /auth/logout",
+        "GET /auth/me",
+        "PUT /auth/profile"
+      ],
+      "crud": [
+        "create",
+        "read",
+        "update"
+      ],
+      "tags": []
+    },
+    "dashboard": {
+      "endpoints": [
+        "GET /dashboard/summary"
+      ],
+      "crud": [
+        "read"
+      ],
+      "tags": []
+    },
+    "wallet": {
+      "endpoints": [
+        "GET /wallet",
+        "GET /wallet/transactions",
+        "POST /wallet/add-funds"
+      ],
+      "crud": [
+        "create",
+        "read"
+      ],
+      "tags": []
+    },
+    "companies": {
+      "endpoints": [
+        "GET /companies"
+      ],
+      "crud": [
+        "read"
+      ],
+      "tags": []
+    },
+    "holdings": {
+      "endpoints": [
+        "GET /holdings"
+      ],
+      "crud": [
+        "read"
+      ],
+      "tags": []
+    },
+    "trades": {
+      "endpoints": [
+        "GET /trades",
+        "POST /trades"
+      ],
+      "crud": [
+        "create",
+        "read"
+      ],
+      "tags": []
+    },
+    "invoices": {
+      "endpoints": [
+        "GET /invoices",
+        "GET /invoices/{id}/pdf"
+      ],
+      "crud": [
+        "read"
+      ],
+      "tags": []
+    },
+    "inbox": {
+      "endpoints": [
+        "GET /inbox",
+        "GET /inbox/unread-count",
+        "PATCH /inbox/{id}"
+      ],
+      "crud": [
+        "read",
+        "update"
+      ],
+      "tags": []
+    }
+  },
+  "endpoints": [
+    {
+      "id": "GET /health",
+      "method": "GET",
+      "path": "/health",
+      "operation_id": null,
+      "summary": "Health check",
+      "tags": [],
+      "resource": "health",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "POST /auth/register",
+      "method": "POST",
+      "path": "/auth/register",
+      "operation_id": null,
+      "summary": "Register account (bcrypt hash, creates wallet + welcome inbox message, sets session cookie)",
+      "tags": [],
+      "resource": "auth",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "name": "Perf User",
+        "email": "perf.user@example.com",
+        "phone": "+1 555 0100",
+        "password": "Perf12345"
+      },
+      "success_status": 201,
+      "response_fields": [
+        "address",
+        "email",
+        "id",
+        "name",
+        "phone"
+      ],
+      "returns_array": false,
+      "responses": [
+        "201",
+        "409"
+      ],
+      "secured": false,
+      "auth_related": true,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "POST /auth/login",
+      "method": "POST",
+      "path": "/auth/login",
+      "operation_id": null,
+      "summary": "Login (bcrypt compare, sets session cookie)",
+      "tags": [],
+      "resource": "auth",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "email": "perf.user@example.com",
+        "password": "string"
+      },
+      "success_status": 200,
+      "response_fields": [
+        "address",
+        "email",
+        "id",
+        "name",
+        "phone"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "401"
+      ],
+      "secured": false,
+      "auth_related": true,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "POST /auth/logout",
+      "method": "POST",
+      "path": "/auth/logout",
+      "operation_id": null,
+      "summary": "Logout (clears cookie)",
+      "tags": [],
+      "resource": "auth",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 204,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "204"
+      ],
+      "secured": true,
+      "auth_related": true,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /auth/me",
+      "method": "GET",
+      "path": "/auth/me",
+      "operation_id": null,
+      "summary": "Current user",
+      "tags": [],
+      "resource": "auth",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [
+        "address",
+        "email",
+        "id",
+        "name",
+        "phone"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": true,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "PUT /auth/profile",
+      "method": "PUT",
+      "path": "/auth/profile",
+      "operation_id": null,
+      "summary": "Update profile",
+      "tags": [],
+      "resource": "auth",
+      "kind": "update",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "name": "string",
+        "phone": "string",
+        "address": "string"
+      },
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": true,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /dashboard/summary",
+      "method": "GET",
+      "path": "/dashboard/summary",
+      "operation_id": null,
+      "summary": "Dashboard - wallet",
+      "tags": [],
+      "resource": "dashboard",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /wallet",
+      "method": "GET",
+      "path": "/wallet",
+      "operation_id": null,
+      "summary": "Wallet balance",
+      "tags": [],
+      "resource": "wallet",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /wallet/transactions",
+      "method": "GET",
+      "path": "/wallet/transactions",
+      "operation_id": null,
+      "summary": "All wallet transactions (unpaginated)",
+      "tags": [],
+      "resource": "wallet",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "POST /wallet/add-funds",
+      "method": "POST",
+      "path": "/wallet/add-funds",
+      "operation_id": null,
+      "summary": "Add funds (simulated payment rail - 800ms card / 1500ms bank delay, then DB transaction)",
+      "tags": [],
+      "resource": "wallet",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "method": "BANK_TRANSFER",
+        "amount": 10000,
+        "accountNumber": "123456789",
+        "ifsc": "string"
+      },
+      "success_status": 201,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "201"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /companies",
+      "method": "GET",
+      "path": "/companies",
+      "operation_id": null,
+      "summary": "List / search companies (LIKE search on ticker, name, sector; simulated prices)",
+      "tags": [],
+      "resource": "companies",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [
+        {
+          "name": "search",
+          "in": "query",
+          "required": false,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [
+        "id",
+        "name",
+        "price",
+        "sector",
+        "ticker"
+      ],
+      "returns_array": true,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": true,
+      "deprecated": false
+    },
+    {
+      "id": "GET /holdings",
+      "method": "GET",
+      "path": "/holdings",
+      "operation_id": null,
+      "summary": "Current holdings",
+      "tags": [],
+      "resource": "holdings",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /trades",
+      "method": "GET",
+      "path": "/trades",
+      "operation_id": null,
+      "summary": "Trade history (unpaginated)",
+      "tags": [],
+      "resource": "trades",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "POST /trades",
+      "method": "POST",
+      "path": "/trades",
+      "operation_id": null,
+      "summary": "Place BUY/SELL trade (interactive DB transaction - wallet, holding, transaction, trade, invoice - plus 2 inbox messages)",
+      "tags": [],
+      "resource": "trades",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "companyId": "string",
+        "type": "BUY",
+        "quantity": 1
+      },
+      "success_status": 201,
+      "response_fields": [
+        "companyId",
+        "id",
+        "invoiceId",
+        "quantity",
+        "total",
+        "type"
+      ],
+      "returns_array": false,
+      "responses": [
+        "201",
+        "400"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /invoices",
+      "method": "GET",
+      "path": "/invoices",
+      "operation_id": null,
+      "summary": "Invoices list",
+      "tags": [],
+      "resource": "invoices",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": true,
+      "deprecated": false
+    },
+    {
+      "id": "GET /invoices/{id}/pdf",
+      "method": "GET",
+      "path": "/invoices/{id}/pdf",
+      "operation_id": null,
+      "summary": "Generate invoice PDF on the fly (pdfkit)",
+      "tags": [],
+      "resource": "invoices",
+      "kind": "read",
+      "is_collection": false,
+      "path_params": [
+        "id"
+      ],
+      "params": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "GET /invoices"
+      ]
+    },
+    {
+      "id": "GET /inbox",
+      "method": "GET",
+      "path": "/inbox",
+      "operation_id": null,
+      "summary": "Inbox messages (unpaginated)",
+      "tags": [],
+      "resource": "inbox",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /inbox/unread-count",
+      "method": "GET",
+      "path": "/inbox/unread-count",
+      "operation_id": null,
+      "summary": "Unread count (polled by the UI header)",
+      "tags": [],
+      "resource": "inbox",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "PATCH /inbox/{id}",
+      "method": "PATCH",
+      "path": "/inbox/{id}",
+      "operation_id": null,
+      "summary": "Mark message read/unread",
+      "tags": [],
+      "resource": "inbox",
+      "kind": "update",
+      "is_collection": false,
+      "path_params": [
+        "id"
+      ],
+      "params": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": "application/json",
+      "request_example": {
+        "isRead": true
+      },
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "GET /inbox",
+        "GET /inbox/unread-count"
+      ]
+    }
+  ]
+}

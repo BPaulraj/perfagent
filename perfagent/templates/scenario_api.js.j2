@@ -1,0 +1,18 @@
+{{ marker }}
+import { apiStep, computeStep, newContext, thinkTime } from '../lib/common.js';
+
+/**
+ * {{ s.id }} - {{ s.name }}
+ * Priority {{ s.priority }} (score {{ s.priority_score }}) | workload share {{ w.share_pct }}% | {{ w.users }} users @ {{ w.rate_per_min }} iterations/min at peak
+ * SLA: p95 < {{ w.sla.p95_ms }}ms, p99 < {{ w.sla.p99_ms }}ms, errors < {{ (w.sla.error_rate * 100) | round(2) }}%
+ * {{ s.description | default('', true) | replace('\n', ' ') }}
+ */
+export function {{ w.fn }}(data) {
+  const ctx = newContext(data, {{ s.id | tojs }});
+{% for st in steps %}
+
+  // {{ loop.index }}. {{ st.name }}
+  if (!{{ 'computeStep' if st.kind == 'compute' else 'apiStep' }}(ctx, {{ st.js | tojs }})) return;
+  thinkTime({{ st.think_time }});
+{% endfor %}
+}

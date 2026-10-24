@@ -1,0 +1,118 @@
+# Reverse-engineered by the perf agent from packages/server/src/modules/*Routes.ts and packages/shared (zod schemas).
+# The running web backend (port 4000, cookie auth) has no published spec; packages/api/openapi.yaml describes the
+# separate Bearer REST API (port 4100, not running) and has different paths.
+openapi: 3.0.3
+info:
+  title: StockBroker Demo - web backend (cookie auth)
+  version: reverse-engineered
+servers:
+  - url: http://localhost:4000/api
+components:
+  securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: token }
+  schemas:
+    Register:
+      type: object
+      required: [name, email, phone, password]
+      properties:
+        name: { type: string, example: Perf User }
+        email: { type: string, format: email }
+        phone: { type: string, example: "+1 555 0100" }
+        password: { type: string, example: Perf12345 }
+    Login:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    User:
+      type: object
+      properties: { id: { type: string }, name: { type: string }, email: { type: string }, phone: { type: string }, address: { type: string } }
+    Company:
+      type: object
+      properties: { id: { type: string }, ticker: { type: string }, name: { type: string }, sector: { type: string }, price: { type: number } }
+    Trade:
+      type: object
+      required: [companyId, type, quantity]
+      properties:
+        companyId: { type: string }
+        type: { type: string, enum: [BUY, SELL] }
+        quantity: { type: integer, example: 1 }
+    TradeResult:
+      type: object
+      properties: { id: { type: string }, companyId: { type: string }, type: { type: string }, quantity: { type: integer }, total: { type: number }, invoiceId: { type: string } }
+    AddFunds:
+      type: object
+      required: [method, amount]
+      properties:
+        method: { type: string, enum: [BANK_TRANSFER, DEBIT_CARD] }
+        amount: { type: number, example: 10000 }
+        accountNumber: { type: string, example: "123456789" }
+        ifsc: { type: string }
+security:
+  - cookieAuth: []
+paths:
+  /health:
+    get: { summary: Health check, security: [], responses: { "200": { description: ok } } }
+  /auth/register:
+    post:
+      summary: Register account (bcrypt hash, creates wallet + welcome inbox message, sets session cookie)
+      security: []
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/Register" } } } }
+      responses: { "201": { description: created, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }, "409": { description: email exists } }
+  /auth/login:
+    post:
+      summary: Login (bcrypt compare, sets session cookie)
+      security: []
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/Login" } } } }
+      responses: { "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }, "401": { description: invalid } }
+  /auth/logout:
+    post: { summary: Logout (clears cookie), responses: { "204": { description: ok } } }
+  /auth/me:
+    get: { summary: Current user, responses: { "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } } } }
+  /auth/profile:
+    put:
+      summary: Update profile
+      requestBody: { content: { application/json: { schema: { type: object, properties: { name: { type: string }, phone: { type: string }, address: { type: string } } } } } }
+      responses: { "200": { description: ok } }
+  /dashboard/summary:
+    get: { summary: Dashboard - wallet, holdings (priced), last 5 trades, P&L, responses: { "200": { description: ok } } }
+  /wallet:
+    get: { summary: Wallet balance, responses: { "200": { description: ok } } }
+  /wallet/transactions:
+    get: { summary: All wallet transactions (unpaginated), responses: { "200": { description: ok } } }
+  /wallet/add-funds:
+    post:
+      summary: Add funds (simulated payment rail - 800ms card / 1500ms bank delay, then DB transaction)
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/AddFunds" } } } }
+      responses: { "201": { description: ok } }
+  /companies:
+    get:
+      summary: List / search companies (LIKE search on ticker, name, sector; simulated prices)
+      parameters: [{ name: search, in: query, schema: { type: string } }]
+      responses: { "200": { description: ok, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Company" } } } } } }
+  /holdings:
+    get: { summary: Current holdings, responses: { "200": { description: ok } } }
+  /trades:
+    get: { summary: Trade history (unpaginated), responses: { "200": { description: ok } } }
+    post:
+      summary: Place BUY/SELL trade (interactive DB transaction - wallet, holding, transaction, trade, invoice - plus 2 inbox messages)
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/Trade" } } } }
+      responses: { "201": { description: created, content: { application/json: { schema: { $ref: "#/components/schemas/TradeResult" } } } }, "400": { description: insufficient balance or holdings } }
+  /invoices:
+    get: { summary: Invoices list, responses: { "200": { description: ok } } }
+  /invoices/{id}/pdf:
+    get:
+      summary: Generate invoice PDF on the fly (pdfkit)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: application/pdf } }
+  /inbox:
+    get: { summary: Inbox messages (unpaginated), responses: { "200": { description: ok } } }
+  /inbox/unread-count:
+    get: { summary: Unread count (polled by the UI header), responses: { "200": { description: ok } } }
+  /inbox/{id}:
+    patch:
+      summary: Mark message read/unread
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody: { content: { application/json: { schema: { type: object, properties: { isRead: { type: boolean } } } } } }
+      responses: { "200": { description: ok } }

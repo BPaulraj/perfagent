@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scenario Review</title>
+<style>
+:root {
+  --bg: #f7f7f5; --surface: #ffffff; --text: #1f2328; --muted: #656d76; --border: #d8dee4;
+  --accent: #3b5bdb; --pass: #1a7f37; --pass-bg: #dafbe1; --fail: #cf222e; --fail-bg: #ffebe9;
+  --warn: #9a6700; --warn-bg: #fff8c5; --p1: #cf222e; --p2: #bc4c00; --p3: #57606a; --bar: #4c6ef5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --muted: #8d96a0; --border: #30363d;
+    --accent: #7c9cff; --pass: #3fb950; --pass-bg: #12261e; --fail: #f85149; --fail-bg: #2d1416;
+    --warn: #d29922; --warn-bg: #2b2111; --p1: #f85149; --p2: #f0883e; --p3: #8d96a0; --bar: #7c9cff;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 24px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 32px 0 10px; }
+.sub { color: var(--muted); margin-bottom: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.kpi .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; } .kpi .l { color: var(--muted); font-size: 12px; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; } tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1px solid currentColor; white-space: nowrap; }
+.pass { color: var(--pass); } .fail { color: var(--fail); } .warn { color: var(--warn); }
+.P1 { color: var(--p1); } .P2 { color: var(--p2); } .P3 { color: var(--p3); }
+.verdict { font-size: 18px; padding: 6px 16px; border-radius: 8px; font-weight: 700; }
+.verdict.PASS { background: var(--pass-bg); color: var(--pass); } .verdict.FAIL { background: var(--fail-bg); color: var(--fail); }
+.bar { height: 8px; background: var(--bar); border-radius: 4px; min-width: 2px; }
+.bar.over { background: var(--fail); }
+ul.notes li { margin-bottom: 6px; }
+details summary { cursor: pointer; color: var(--accent); }
+code { font-size: 12px; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
+.muted { color: var(--muted); }
+</style>
+</head>
+<body><main>
+<h1>Scenario Review - petstore-demo</h1>
+<div class="sub">Generated 2026-10-24T09:26:20+05:30 · Environment: test · 7 candidate scenarios</div>
+
+<div class="grid">
+  <div class="card kpi"><div class="v">7</div><div class="l">Candidates</div></div>
+  <div class="card kpi"><div class="v P1">4</div><div class="l">P1 - must test</div></div>
+  <div class="card kpi"><div class="v">6</div><div class="l">Approved</div></div>
+  <div class="card kpi"><div class="v">100%</div><div class="l">Approved workload share</div></div>
+<div class="card kpi"><div class="v">58%</div><div class="l">API endpoint coverage (11/19)</div></div></div>
+
+<h2>How to decide</h2>
+<div class="card">
+  Priority score = <b>40%</b> business criticality + <b>35%</b> usage frequency + <b>25%</b> technical risk (each rated 1-5), scaled to 100.
+  P1 ≥ 75 · P2 ≥ 50 · P3 &lt; 50.
+  <br>Approve in Claude Code chat (e.g. <i>"approve all P1 and SC-005"</i>) or with
+  <code>python -m perfagent catalog petstore-demo approve SC-001 SC-002</code> / <code>--priority P1</code>.
+  Edit ratings, SLAs and workload share directly in <code>catalog.yaml</code>, then re-run <code>catalog score</code>.
+</div>
+
+
+<h2>Ranked scenarios</h2>
+<div class="table-wrap"><table>
+<tr><th>#</th><th>ID</th><th>Scenario</th><th>Pri</th><th class="n">Score</th><th>Crit / Freq / Risk</th><th>Type</th><th class="n">Share</th><th>SLA p95</th><th>Status</th></tr>
+<tr>
+  <td>1</td><td><b>SC-003</b></td>
+  <td><b>Customer login and view profile</b><div class="muted">Registered customer logs in, views their profile and logs out</div>
+    <details><summary>3 steps · rationale</summary>
+      <p><i>Gate to all personalised journeys; auth/session services are a common bottleneck under concurrency</i></p>
+      <ol><li><code>GET /user/login</code> - Login</li><li><code>GET /user/{username}</code> - View profile</li><li><code>GET /user/logout</code> - Logout</li></ol>
+<p class="muted">Test data: pool of pre-created test users (users.csv: username,password)</p>    </details>
+  </td>
+  <td><span class="badge P1">P1</span></td>
+  <td class="n">83</td>
+  <td>5 / 4 / 3</td>
+  <td>api</td>
+  <td class="n">20%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>2</td><td><b>SC-001</b></td>
+  <td><b>Browse available pets and view details</b><div class="muted">Shopper lists pets by status and opens a pet detail page</div>
+    <details><summary>2 steps · rationale</summary>
+      <p><i>Highest-volume journey (every session starts here); unbounded list response grows with data volume</i></p>
+      <ol><li><code>GET /pet/findByStatus</code> - List available pets <span class="muted">→ extracts petId</span></li><li><code>GET /pet/{petId}</code> - View pet details</li></ol>
+<p class="muted">Risks: findByStatus has no pagination - response size scales with inventory</p>    </details>
+  </td>
+  <td><span class="badge P1">P1</span></td>
+  <td class="n">82</td>
+  <td>4 / 5 / 3</td>
+  <td>api</td>
+  <td class="n">45%</td>
+  <td>800 ms</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>3</td><td><b>SC-002</b></td>
+  <td><b>Place an order for a pet</b><div class="muted">Shopper picks an available pet, places an order and checks the order status</div>
+    <details><summary>3 steps · rationale</summary>
+      <p><i>Revenue transaction; write path with inventory side effects - most business-critical flow</i></p>
+      <ol><li><code>GET /pet/findByStatus</code> - Find available pet <span class="muted">→ extracts petId</span></li><li><code>POST /store/order</code> - Place order <span class="muted">→ extracts orderId</span></li><li><code>GET /store/order/{orderId}</code> - Check order status</li></ol>
+<p class="muted">Test data: available pets in inventory</p>    </details>
+  </td>
+  <td><span class="badge P1">P1</span></td>
+  <td class="n">81</td>
+  <td>5 / 3 / 4</td>
+  <td>api</td>
+  <td class="n">15%</td>
+  <td>1200 ms</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>4</td><td><b>SC-007</b></td>
+  <td><b>Storefront page load (real browser)</b><div class="muted">User opens the web front-end and waits for the operations list to render</div>
+    <details><summary>2 steps · rationale</summary>
+      <p><i>Measures real end-user experience (Core Web Vitals) - initial crawl showed TTFB 3.5s and FCP 6.3s on cold load</i></p>
+      <ol><li>🌐 goto / - Open home page</li><li>🌐 waitFor .opblock - Operations rendered</li></ol>
+<p class="muted">Risks: cold-load FCP 6.3s observed during discovery</p>    </details>
+  </td>
+  <td><span class="badge P1">P1</span></td>
+  <td class="n">75</td>
+  <td>4 / 4 / 3</td>
+  <td>web</td>
+  <td class="n">-%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>5</td><td><b>SC-004</b></td>
+  <td><b>Store inventory summary</b><div class="muted">Store staff / dashboard polls the inventory counts by status</div>
+    <details><summary>1 steps · rationale</summary>
+      <p><i>Aggregate query across all pets - CPU/DB heavy and often polled by dashboards</i></p>
+      <ol><li><code>GET /store/inventory</code> - Get inventory</li></ol>
+    </details>
+  </td>
+  <td><span class="badge P2">P2</span></td>
+  <td class="n">65</td>
+  <td>3 / 3 / 4</td>
+  <td>api</td>
+  <td class="n">10%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>6</td><td><b>SC-005</b></td>
+  <td><b>List a new pet for sale</b><div class="muted">Seller creates a pet listing, verifies it and updates its details</div>
+    <details><summary>3 steps · rationale</summary>
+      <p><i>Main write path that grows the catalogue; validates create/update latency and data growth</i></p>
+      <ol><li><code>POST /pet</code> - Create pet <span class="muted">→ extracts petId</span></li><li><code>GET /pet/{petId}</code> - Verify pet</li><li><code>PUT /pet</code> - Update pet</li></ol>
+    </details>
+  </td>
+  <td><span class="badge P2">P2</span></td>
+  <td class="n">53</td>
+  <td>3 / 2 / 3</td>
+  <td>api</td>
+  <td class="n">10%</td>
+  <td>default</td>
+  <td><span class="badge pass">approved</span></td>
+</tr>
+<tr>
+  <td>7</td><td><b>SC-006</b></td>
+  <td><b>Search pets by tags</b><div class="muted">Shopper filters pets by tag</div>
+    <details><summary>1 steps · rationale</summary>
+      <p><i>Secondary search path; tag filtering may not be indexed</i></p>
+      <ol><li><code>GET /pet/findByTags</code> - Find by tags</li></ol>
+    </details>
+  </td>
+  <td><span class="badge P2">P2</span></td>
+  <td class="n">52</td>
+  <td>2 / 3 / 3</td>
+  <td>api</td>
+  <td class="n">0%</td>
+  <td>default</td>
+  <td><span class="badge warn">deferred</span></td>
+</tr>
+</table></div>
+
+<h2>Endpoints not covered by any scenario (8)</h2>
+<div class="card"><details><summary>Show list</summary><ul><li><code>DELETE /pet/{petId}</code></li><li><code>DELETE /store/order/{orderId}</code></li><li><code>DELETE /user/{username}</code></li><li><code>POST /pet/{petId}</code></li><li><code>POST /pet/{petId}/uploadImage</code></li><li><code>POST /user</code></li><li><code>POST /user/createWithList</code></li><li><code>PUT /user/{username}</code></li></ul></details>
+<p class="muted">Not every endpoint needs load. Low-traffic admin or one-off endpoints are usually left out on purpose; record the reason in the test plan.</p></div>
+</main></body></html>

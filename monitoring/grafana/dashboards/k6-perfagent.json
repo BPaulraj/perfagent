@@ -1,0 +1,757 @@
+{
+  "uid": "k6-perfagent",
+  "title": "k6 - perfagent",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "tags": [
+    "k6",
+    "perfagent"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Requests",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT count(\"value\") FROM \"http_reqs\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Avg RPS",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT count(\"value\")/(($__to - $__from)/1000) FROM \"http_reqs\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "p95 response",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "p99 response",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT percentile(\"value\", 99) FROM \"http_req_duration\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Error rate",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.005
+              },
+              {
+                "color": "red",
+                "value": 0.01
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT mean(\"value\") FROM \"http_req_failed\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Max VUs",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT max(\"value\") FROM \"vus\" WHERE \"testid\" =~ /^$testid$/ AND $timeFilter"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Virtual users vs throughput",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT max(\"value\") FROM \"vus\" WHERE \"testid\" =~ /^$testid$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "alias": "VUs"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Throughput (req/s) by scenario",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT count(\"value\")/($__interval_ms/1000) FROM \"http_reqs\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval), \"scenario\" fill(0)",
+          "alias": "$tag_scenario"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "p95 response time by scenario",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval), \"scenario\" fill(null)",
+          "alias": "$tag_scenario"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Error rate by scenario",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT mean(\"value\") FROM \"http_req_failed\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval), \"scenario\" fill(null)",
+          "alias": "$tag_scenario"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "p95 by transaction (step)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT percentile(\"value\", 95) FROM \"http_req_duration\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval), \"name\" fill(null)",
+          "alias": "$tag_name"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Response time breakdown (avg)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT mean(\"value\") AS \"waiting\" FROM \"http_req_waiting\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval) fill(null); SELECT mean(\"value\") AS \"blocked\" FROM \"http_req_blocked\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval) fill(null); SELECT mean(\"value\") AS \"connecting\" FROM \"http_req_connecting\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval) fill(null); SELECT mean(\"value\") AS \"tls_handshaking\" FROM \"http_req_tls_handshaking\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval) fill(null); SELECT mean(\"value\") AS \"receiving\" FROM \"http_req_receiving\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "alias": "$col"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Status codes",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 30,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT count(\"value\") FROM \"http_reqs\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval), \"status\" fill(0)",
+          "alias": "HTTP $tag_status"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Core Web Vitals (browser, p75)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT percentile(\"value\", 75) AS \"LCP\" FROM \"browser_web_vital_lcp\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval) fill(null); SELECT percentile(\"value\", 75) AS \"FCP\" FROM \"browser_web_vital_fcp\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval) fill(null); SELECT percentile(\"value\", 75) AS \"TTFB\" FROM \"browser_web_vital_ttfb\" WHERE \"testid\" =~ /^$testid$/ AND \"scenario\" =~ /^$scenario$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "alias": "$col"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Dropped iterations (target rate not achieved)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "k6influx"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 38,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT sum(\"value\") FROM \"dropped_iterations\" WHERE \"testid\" =~ /^$testid$/ AND $timeFilter GROUP BY time($__interval), \"scenario\" fill(0)",
+          "alias": "$tag_scenario"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "testid",
+        "label": "Run",
+        "type": "query",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "k6influx"
+        },
+        "query": "SHOW TAG VALUES FROM \"http_reqs\" WITH KEY = \"testid\"",
+        "refresh": 2,
+        "sort": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": {}
+      },
+      {
+        "name": "scenario",
+        "label": "Scenario",
+        "type": "query",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "k6influx"
+        },
+        "query": "SHOW TAG VALUES FROM \"http_reqs\" WITH KEY = \"scenario\"",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": {}
+      }
+    ]
+  }
+}

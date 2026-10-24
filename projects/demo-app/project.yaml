@@ -1,0 +1,65 @@
+# perfagent project configuration
+# One project = one application under test. Everything the agent produces lives next to this file.
+
+name: demo-app
+environment: test            # test | staging | uat | production  (production runs require --allow-production)
+
+target:
+  web_url: http://localhost:5173       # front-end entry point (leave empty for API-only)
+  api_base_url: http://localhost:4000/api  # base URL used by generated API scripts
+  openapi: projects/demo-app/model/server-openapi.yaml   # reverse-engineered from server source (no published spec)
+
+safety:
+  # Load is only ever sent to these hosts (sub-domains included). Never list hosts you are not authorised to test.
+  allowed_hosts: [localhost]
+
+auth:
+  type: none                 # none | bearer | apikey | basic | login
+  # bearer:  token read from env var token_env
+  token_env: PERF_TOKEN
+  # apikey:  header + env var
+  apikey_header: X-API-Key
+  apikey_env: PERF_API_KEY
+  # basic:   user/password env vars
+  username_env: PERF_USER
+  password_env: PERF_PASSWORD
+  # login:   performed once in k6 setup(); token extracted and sent as Bearer
+  login:
+    method: POST
+    path: /auth/login
+    body: { username: "{{env.PERF_USER}}", password: "{{env.PERF_PASSWORD}}" }
+    token_path: token        # dot path into the JSON response, e.g. data.accessToken
+
+crawl:
+  max_pages: 10
+  max_depth: 3
+  headless: true
+  exclude_patterns: [logout, signout, sign-out, delete, remove, unsubscribe]
+  login: null
+  # login:
+  #   url: /login
+  #   username_selector: "#username"
+  #   password_selector: "#password"
+  #   submit_selector: "button[type=submit]"
+  #   username_env: PERF_USER
+  #   password_env: PERF_PASSWORD
+
+# Non-functional requirements - agree these with the business BEFORE testing.
+nfr:
+  peak_concurrent_users: 20      # owner-agreed: single-laptop demo (app + k6 on one machine)
+  browser_vus: 1                 # one real browser user alongside protocol load
+  default_sla:
+    p95_ms: 1000
+    p99_ms: 2000
+    error_rate: 0.01             # 1%
+    lcp_ms: 2500                 # Core Web Vitals "good" threshold (p75)
+  est_response_s: 0.3            # assumed server time per request, used for workload maths until a baseline exists
+
+# Optional overrides of the built-in test profiles (see docs/PERF_STRATEGY.md).
+# Stage targets are multipliers of the designed peak load.
+test_profiles: {}
+#  load:
+#    stages: [{duration: 5m, target: 1.0}, {duration: 30m, target: 1.0}, {duration: 2m, target: 0}]
+
+monitoring:
+  influxdb_url: http://localhost:8086/k6    # used only with: run --influx

@@ -1,0 +1,290 @@
+project: petstore-demo
+assumptions:
+- No production analytics provided; traffic mix estimated from e-commerce norms (read-heavy, ~70% browse)
+- Peak 100 concurrent users (project default) - replace with real business volumes
+- Demo API is public and shared; only smoke-level load is permitted against it
+excluded:
+- 'DELETE /pet/{petId}, DELETE /store/order/{orderId}, DELETE /user/{username}: destructive, admin-only, negligible
+  traffic'
+- 'POST /user/createWithList: bulk admin import, not a user journey'
+- 'POST /pet/{petId}/uploadImage: binary upload; add later with a fixture file if image traffic matters'
+scenarios:
+- id: SC-003
+  name: Customer login and view profile
+  type: api
+  description: Registered customer logs in, views their profile and logs out
+  rationale: Gate to all personalised journeys; auth/session services are a common bottleneck under concurrency
+  business_criticality: 5
+  frequency: 4
+  technical_risk: 3
+  workload_share: 20
+  data_file: users.csv
+  data_requirements:
+  - 'pool of pre-created test users (users.csv: username,password)'
+  status: approved
+  steps:
+  - name: Login
+    method: GET
+    path: /user/login
+    query:
+      username: '{{username}}'
+      password: '{{password}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: View profile
+    method: GET
+    path: /user/{username}
+    expect:
+    - 200
+    think_time: 4
+  - name: Logout
+    method: GET
+    path: /user/logout
+    expect:
+    - 200
+    think_time: 1
+  priority_score: 83
+  priority: P1
+  rank: 1
+  review:
+    decision: approved
+    at: '2026-10-24T09:11:26+05:30'
+    note: framework self-test
+- id: SC-001
+  name: Browse available pets and view details
+  type: api
+  description: Shopper lists pets by status and opens a pet detail page
+  rationale: Highest-volume journey (every session starts here); unbounded list response grows with data volume
+  business_criticality: 4
+  frequency: 5
+  technical_risk: 3
+  workload_share: 45
+  sla:
+    p95_ms: 800
+    p99_ms: 1500
+    error_rate: 0.01
+  risks:
+  - findByStatus has no pagination - response size scales with inventory
+  status: approved
+  steps:
+  - name: List available pets
+    method: GET
+    path: /pet/findByStatus
+    query:
+      status: available
+    extract:
+      petId: 0.id
+    expect:
+    - 200
+    think_time: 3
+  - name: View pet details
+    method: GET
+    path: /pet/{petId}
+    expect:
+    - 200
+    think_time: 5
+  priority_score: 82
+  priority: P1
+  rank: 2
+  review:
+    decision: approved
+    at: '2026-10-24T09:11:26+05:30'
+    note: framework self-test
+- id: SC-002
+  name: Place an order for a pet
+  type: api
+  description: Shopper picks an available pet, places an order and checks the order status
+  rationale: Revenue transaction; write path with inventory side effects - most business-critical flow
+  business_criticality: 5
+  frequency: 3
+  technical_risk: 4
+  workload_share: 15
+  sla:
+    p95_ms: 1200
+    p99_ms: 2500
+    error_rate: 0.005
+  data_requirements:
+  - available pets in inventory
+  status: approved
+  steps:
+  - name: Find available pet
+    method: GET
+    path: /pet/findByStatus
+    query:
+      status: available
+    extract:
+      petId: 0.id
+    think_time: 2
+  - name: Place order
+    method: POST
+    path: /store/order
+    body:
+      petId: '{{petId}}'
+      quantity: 1
+      status: placed
+      complete: false
+    extract:
+      orderId: id
+    expect:
+    - 200
+    think_time: 3
+  - name: Check order status
+    method: GET
+    path: /store/order/{orderId}
+    expect:
+    - 200
+    think_time: 2
+  priority_score: 81
+  priority: P1
+  rank: 3
+  review:
+    decision: approved
+    at: '2026-10-24T09:11:26+05:30'
+    note: framework self-test
+- id: SC-007
+  name: Storefront page load (real browser)
+  type: web
+  description: User opens the web front-end and waits for the operations list to render
+  rationale: Measures real end-user experience (Core Web Vitals) - initial crawl showed TTFB 3.5s and FCP 6.3s on
+    cold load
+  business_criticality: 4
+  frequency: 4
+  technical_risk: 3
+  sla:
+    lcp_ms: 4000
+    error_rate: 0.01
+  risks:
+  - cold-load FCP 6.3s observed during discovery
+  status: approved
+  steps:
+  - name: Open home page
+    kind: web
+    action: goto
+    url: /
+    think_time: 2
+  - name: Operations rendered
+    kind: web
+    action: waitFor
+    selector: .opblock
+    think_time: 1
+  priority_score: 75
+  priority: P1
+  rank: 4
+  review:
+    decision: approved
+    at: '2026-10-24T09:11:26+05:30'
+    note: framework self-test
+- id: SC-004
+  name: Store inventory summary
+  type: api
+  description: Store staff / dashboard polls the inventory counts by status
+  rationale: Aggregate query across all pets - CPU/DB heavy and often polled by dashboards
+  business_criticality: 3
+  frequency: 3
+  technical_risk: 4
+  workload_share: 10
+  status: approved
+  steps:
+  - name: Get inventory
+    method: GET
+    path: /store/inventory
+    expect:
+    - 200
+    think_time: 10
+  priority_score: 65
+  priority: P2
+  rank: 5
+  review:
+    decision: approved
+    at: '2026-10-24T09:11:26+05:30'
+    note: framework self-test
+- id: SC-005
+  name: List a new pet for sale
+  type: api
+  description: Seller creates a pet listing, verifies it and updates its details
+  rationale: Main write path that grows the catalogue; validates create/update latency and data growth
+  business_criticality: 3
+  frequency: 2
+  technical_risk: 3
+  workload_share: 10
+  status: approved
+  steps:
+  - name: Create pet
+    method: POST
+    path: /pet
+    body:
+      id: '{{$randomInt}}'
+      name: perf-{{$randomString}}
+      photoUrls:
+      - https://example.com/p.png
+      status: available
+      category:
+        id: 1
+        name: Dogs
+    extract:
+      petId: id
+    expect:
+    - 200
+    think_time: 3
+  - name: Verify pet
+    method: GET
+    path: /pet/{petId}
+    expect:
+    - 200
+    think_time: 2
+  - name: Update pet
+    method: PUT
+    path: /pet
+    body:
+      id: '{{petId}}'
+      name: perf-updated
+      photoUrls:
+      - https://example.com/p.png
+      status: pending
+    expect:
+    - 200
+    think_time: 2
+  priority_score: 53
+  priority: P2
+  rank: 6
+  review:
+    decision: approved
+    at: '2026-10-24T09:11:26+05:30'
+    note: framework self-test
+- id: SC-006
+  name: Search pets by tags
+  type: api
+  description: Shopper filters pets by tag
+  rationale: Secondary search path; tag filtering may not be indexed
+  business_criticality: 2
+  frequency: 3
+  technical_risk: 3
+  workload_share: 0
+  status: deferred
+  steps:
+  - name: Find by tags
+    method: GET
+    path: /pet/findByTags
+    query:
+      tags: tag1
+    expect:
+    - 200
+    think_time: 3
+  priority_score: 52
+  priority: P2
+  rank: 7
+  review:
+    decision: deferred
+    at: '2026-10-24T09:11:26+05:30'
+    note: low share; revisit after baseline
+scoring:
+  weights:
+    business_criticality: 0.4
+    frequency: 0.35
+    technical_risk: 0.25
+  bands:
+    P1: '>= 75'
+    P2: '>= 50'
+    P3: '>= 0'
+updated_at: '2026-10-24T09:26:20+05:30'

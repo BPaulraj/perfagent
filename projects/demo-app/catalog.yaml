@@ -1,0 +1,566 @@
+project: demo-app
+assumptions:
+- 'No published spec for the running web backend: API model reverse-engineered from packages/server source (model/server-openapi.yaml)'
+- API load goes straight to the backend (localhost:4000) - the Vite dev proxy (5173) is not a production component;
+  the browser scenario uses 5173
+- 'No production analytics (demo app): traffic mix estimated from retail-broker norms - read-heavy, ~15% trading'
+- 'UI background polling included: market prices every 15s on /trade, inbox unread count every 30s on every page'
+- Each iteration = one user session; users log in per iteration (cookie session, k6 keeps a cookie jar per VU)
+- k6 runs on the same machine as the app - load generator competes for CPU, so absolute numbers are indicative;
+  compare runs relatively
+key_risks:
+- 'SQLite with DATABASE_URL connection_limit=1: every query from every user is serialised through ONE connection
+  - expected first bottleneck'
+- bcrypt (cost 10) on login/register runs on the Node event loop CPU - blocks all other requests while hashing
+- Trade = interactive DB transaction (5-6 writes) + 2 inbox inserts, holding the single connection for its whole
+  duration
+- Add-funds holds each request ~1.5s (simulated payment delay) - concurrent open requests pile up
+- Unpaginated lists (trades, transactions, inbox, invoices) grow with every trade - response time drifts over a
+  soak
+excluded:
+- 'PUT /auth/profile: rare, simple single-row update (kept as SC-009 proposal, recommend defer)'
+- 'GET /health: infrastructure only'
+- 'packages/api Bearer REST API (port 4100): not running; test separately if it serves real clients'
+scenarios:
+- id: SC-001
+  name: Login and view dashboard
+  type: api
+  description: Customer logs in, app loads profile, dashboard summary and unread badge, then logs out
+  rationale: Every session starts here. bcrypt login blocks the event loop and the dashboard runs 3 parallel queries
+    through a single SQLite connection
+  business_criticality: 5
+  frequency: 5
+  technical_risk: 5
+  workload_share: 30
+  data_file: users.csv
+  data_requirements:
+  - 'pre-registered perf users (users.csv: email); password from env PERF_PASSWORD'
+  risks:
+  - bcrypt CPU on event loop
+  - single DB connection
+  status: approved
+  steps:
+  - name: Login
+    method: POST
+    path: /auth/login
+    body:
+      email: '{{email}}'
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 200
+    think_time: 1
+  - name: Get current user
+    method: GET
+    path: /auth/me
+    expect:
+    - 200
+    think_time: 0
+  - name: Dashboard summary
+    method: GET
+    path: /dashboard/summary
+    expect:
+    - 200
+    think_time: 0
+  - name: Unread count
+    method: GET
+    path: /inbox/unread-count
+    expect:
+    - 200
+    think_time: 15
+  - name: Dashboard refresh
+    method: GET
+    path: /dashboard/summary
+    expect:
+    - 200
+    think_time: 5
+  - name: Logout
+    method: POST
+    path: /auth/logout
+    expect:
+    - 204
+    think_time: 1
+  priority_score: 100
+  priority: P1
+  rank: 1
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-002
+  name: Browse and search the market
+  type: api
+  description: Customer opens Trade, sees live prices (15s polling), searches for stocks and checks holdings
+  rationale: Highest-volume read path; LIKE '%term%' search across 3 columns cannot use an index, plus price polling
+    from every open Trade page
+  business_criticality: 4
+  frequency: 5
+  technical_risk: 4
+  workload_share: 29
+  data_file: users.csv
+  data_requirements:
+  - search_term column in users.csv (tickers, names, sectors)
+  status: approved
+  steps:
+  - name: Login
+    method: POST
+    path: /auth/login
+    body:
+      email: '{{email}}'
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: List companies
+    method: GET
+    path: /companies
+    expect:
+    - 200
+    think_time: 0
+  - name: Holdings
+    method: GET
+    path: /holdings
+    expect:
+    - 200
+    think_time: 15
+  - name: Price poll
+    method: GET
+    path: /companies
+    expect:
+    - 200
+    think_time: 5
+  - name: Search companies
+    method: GET
+    path: /companies
+    query:
+      search: '{{search_term}}'
+    expect:
+    - 200
+    think_time: 10
+  - name: Price poll 2
+    method: GET
+    path: /companies
+    expect:
+    - 200
+    think_time: 5
+  priority_score: 87
+  priority: P1
+  rank: 2
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-003
+  name: Place a BUY trade
+  type: api
+  description: Customer checks wallet, finds a stock, buys 1 share, reviews trade history and dashboard
+  rationale: Core revenue transaction; interactive DB transaction with 5-6 writes plus 2 inbox inserts holding the
+    single connection - highest contention risk
+  business_criticality: 5
+  frequency: 3
+  technical_risk: 5
+  workload_share: 15
+  data_file: users.csv
+  data_requirements:
+  - perf users with funded wallets (seed step adds funds)
+  risks:
+  - 400 Insufficient balance if wallets are not topped up for long runs
+  status: approved
+  steps:
+  - name: Login
+    method: POST
+    path: /auth/login
+    body:
+      email: '{{email}}'
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: Wallet balance
+    method: GET
+    path: /wallet
+    expect:
+    - 200
+    think_time: 2
+  - name: Find stock
+    method: GET
+    path: /companies
+    query:
+      search: '{{search_term}}'
+    extract:
+      companyId: 0.id
+    expect:
+    - 200
+    think_time: 5
+  - name: Buy 1 share
+    method: POST
+    path: /trades
+    body:
+      companyId: '{{companyId}}'
+      type: BUY
+      quantity: 1
+    expect:
+    - 201
+    think_time: 3
+  - name: Trade history
+    method: GET
+    path: /trades
+    expect:
+    - 200
+    think_time: 3
+  - name: Dashboard after trade
+    method: GET
+    path: /dashboard/summary
+    expect:
+    - 200
+    think_time: 2
+  priority_score: 86
+  priority: P1
+  rank: 3
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-010
+  name: Login to dashboard (real browser)
+  type: web
+  description: Real Chromium user logs in through the UI and waits for the dashboard navigation to render
+  rationale: Measures end-user experience (LCP, FCP, CLS) of the critical entry journey including SPA bootstrap;
+    note the Vite dev server serves unbundled modules (38 requests), so treat UI timings as dev-mode
+  business_criticality: 5
+  frequency: 4
+  technical_risk: 3
+  data_file: users.csv
+  status: approved
+  steps:
+  - name: Open login page
+    kind: web
+    action: goto
+    url: /login
+    think_time: 2
+  - name: Enter email
+    kind: web
+    action: fill
+    selector: '#email'
+    value: '{{email}}'
+    think_time: 0
+  - name: Enter password
+    kind: web
+    action: fill
+    selector: '#password'
+    value: '{{env.PERF_PASSWORD}}'
+    think_time: 1
+  - name: Submit login
+    kind: web
+    action: click
+    selector: form button
+    think_time: 0
+  - name: Dashboard rendered
+    kind: web
+    action: waitFor
+    selector: nav a[href='/trade']
+    think_time: 3
+  priority_score: 83
+  priority: P1
+  rank: 4
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-005
+  name: Add funds to wallet
+  type: api
+  description: Customer opens Payments, reviews transactions and adds funds by bank transfer
+  rationale: Money movement; simulated 1.5s payment delay keeps requests open so concurrency piles up; pending->success
+    two-phase write
+  business_criticality: 5
+  frequency: 2
+  technical_risk: 4
+  workload_share: 8
+  data_file: users.csv
+  sla:
+    p95_ms: 2500
+    p99_ms: 4000
+    error_rate: 0.01
+  status: approved
+  steps:
+  - name: Login
+    method: POST
+    path: /auth/login
+    body:
+      email: '{{email}}'
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: Transactions
+    method: GET
+    path: /wallet/transactions
+    expect:
+    - 200
+    think_time: 5
+  - name: Add funds bank transfer
+    method: POST
+    path: /wallet/add-funds
+    body:
+      method: BANK_TRANSFER
+      amount: 5000
+      accountNumber: '123456789012'
+      ifsc: PERF0001234
+    expect:
+    - 201
+    think_time: 2
+  - name: Wallet balance
+    method: GET
+    path: /wallet
+    expect:
+    - 200
+    think_time: 2
+  priority_score: 74
+  priority: P2
+  rank: 5
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-004
+  name: Sell from holdings
+  type: api
+  description: Customer opens holdings and sells 1 share of the first position
+  rationale: Second write path (holding update/delete + wallet credit); same transaction contention, lower volume
+    than buys
+  business_criticality: 4
+  frequency: 2
+  technical_risk: 4
+  workload_share: 7
+  data_file: users.csv
+  data_requirements:
+  - perf users holding shares (seed step buys a few)
+  status: approved
+  steps:
+  - name: Login
+    method: POST
+    path: /auth/login
+    body:
+      email: '{{email}}'
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: View holdings
+    method: GET
+    path: /holdings
+    extract:
+      companyId: 0.companyId
+    expect:
+    - 200
+    think_time: 5
+  - name: Sell 1 share
+    method: POST
+    path: /trades
+    body:
+      companyId: '{{companyId}}'
+      type: SELL
+      quantity: 1
+    expect:
+    - 201
+    think_time: 3
+  - name: Trade history
+    method: GET
+    path: /trades
+    expect:
+    - 200
+    think_time: 2
+  priority_score: 66
+  priority: P2
+  rank: 6
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-008
+  name: Register a new account
+  type: api
+  description: New visitor creates an account (wallet and welcome message created)
+  rationale: Acquisition funnel; bcrypt hash plus 3 inserts; spikes during campaigns
+  business_criticality: 4
+  frequency: 1
+  technical_risk: 4
+  workload_share: 2
+  sla:
+    p95_ms: 1500
+    p99_ms: 3000
+    error_rate: 0.01
+  risks:
+  - creates a new user per iteration - DB grows; clean up perf.reg.* users after testing
+  status: approved
+  steps:
+  - name: Register
+    method: POST
+    path: /auth/register
+    body:
+      name: Perf Reg
+      email: perf.reg.{{$uuid}}@example.test
+      phone: +1 555 0100
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 201
+    think_time: 2
+  - name: Dashboard first visit
+    method: GET
+    path: /dashboard/summary
+    expect:
+    - 200
+    think_time: 3
+  priority_score: 59
+  priority: P2
+  rank: 7
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-006
+  name: Download a trade invoice PDF
+  type: api
+  description: Customer opens trade history and downloads the PDF invoice of the latest trade
+  rationale: PDF generated on request with pdfkit - CPU on the event loop; regulatory document
+  business_criticality: 3
+  frequency: 2
+  technical_risk: 4
+  workload_share: 3
+  data_file: users.csv
+  data_requirements:
+  - perf users with at least one trade (seed step)
+  status: approved
+  steps:
+  - name: Login
+    method: POST
+    path: /auth/login
+    body:
+      email: '{{email}}'
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: Trade history
+    method: GET
+    path: /trades
+    extract:
+      invoiceId: 0.invoiceId
+    expect:
+    - 200
+    think_time: 4
+  - name: Invoice PDF
+    method: GET
+    path: /invoices/{invoiceId}/pdf
+    expect:
+    - 200
+    think_time: 3
+  priority_score: 58
+  priority: P2
+  rank: 8
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-007
+  name: Read inbox messages
+  type: api
+  description: Customer opens inbox, opens the newest message (marks read) and the badge refreshes
+  rationale: Unpaginated inbox grows by 2 messages per trade - degrades over time; frequent but low business impact
+  business_criticality: 2
+  frequency: 3
+  technical_risk: 3
+  workload_share: 5
+  data_file: users.csv
+  status: approved
+  steps:
+  - name: Login
+    method: POST
+    path: /auth/login
+    body:
+      email: '{{email}}'
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: Inbox list
+    method: GET
+    path: /inbox
+    extract:
+      messageId: 0.id
+    expect:
+    - 200
+    think_time: 4
+  - name: Mark read
+    method: PATCH
+    path: /inbox/{messageId}
+    body:
+      isRead: true
+    expect:
+    - 200
+    think_time: 1
+  - name: Unread count
+    method: GET
+    path: /inbox/unread-count
+    expect:
+    - 200
+    think_time: 2
+  priority_score: 52
+  priority: P2
+  rank: 9
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+- id: SC-009
+  name: Update profile
+  type: api
+  description: Customer edits phone/address on the profile page
+  rationale: Rare, single-row update; low risk
+  business_criticality: 2
+  frequency: 1
+  technical_risk: 2
+  workload_share: 1
+  data_file: users.csv
+  status: approved
+  steps:
+  - name: Login
+    method: POST
+    path: /auth/login
+    body:
+      email: '{{email}}'
+      password: '{{env.PERF_PASSWORD}}'
+    expect:
+    - 200
+    think_time: 2
+  - name: Get profile
+    method: GET
+    path: /auth/me
+    expect:
+    - 200
+    think_time: 5
+  - name: Save profile
+    method: PUT
+    path: /auth/profile
+    body:
+      address: 1 Perf Street {{$randomInt}}
+    expect:
+    - 200
+    think_time: 2
+  priority_score: 33
+  priority: P3
+  rank: 10
+  review:
+    decision: approved
+    at: '2026-10-24T09:48:19+05:30'
+    note: Approved by owner (own demo app); SC-009 share set to 1%, SC-002 to 29%
+scoring:
+  weights:
+    business_criticality: 0.4
+    frequency: 0.35
+    technical_risk: 0.25
+  bands:
+    P1: '>= 75'
+    P2: '>= 50'
+    P3: '>= 0'
+updated_at: '2026-10-24T09:48:19+05:30'

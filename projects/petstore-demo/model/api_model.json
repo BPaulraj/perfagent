@@ -1,0 +1,1009 @@
+{
+  "generated_at": "2026-10-24T09:10:13+05:30",
+  "source": "https://petstore3.swagger.io/api/v3/openapi.json",
+  "spec_version": "3.0.4",
+  "title": "Swagger Petstore - OpenAPI 3.0",
+  "description": "This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about\nSwagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!\nYou can now help us improve the API whether it's by making changes to the definition itself or to the code.\nThat way, with time, we can improve the API in general, and expose some of the new features in OAS3.\n\nSome useful links:\n- [The Pet Store repository](https://github.com/swagger-api/swagger-petstore)\n- [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)",
+  "base_url": "https://petstore3.swagger.io/api/v3",
+  "security_schemes": {
+    "petstore_auth": {
+      "type": "oauth2",
+      "scheme": null,
+      "in": null,
+      "name": null
+    },
+    "api_key": {
+      "type": "apiKey",
+      "scheme": null,
+      "in": "header",
+      "name": "api_key"
+    }
+  },
+  "stats": {
+    "endpoints": 19,
+    "resources": 3,
+    "by_kind": {
+      "read": 8,
+      "create": 6,
+      "update": 2,
+      "delete": 3
+    },
+    "auth_endpoints": [
+      "GET /user/login",
+      "GET /user/logout"
+    ]
+  },
+  "resources": {
+    "pet": {
+      "endpoints": [
+        "POST /pet",
+        "PUT /pet",
+        "GET /pet/findByStatus",
+        "GET /pet/findByTags",
+        "GET /pet/{petId}",
+        "POST /pet/{petId}",
+        "DELETE /pet/{petId}",
+        "POST /pet/{petId}/uploadImage"
+      ],
+      "crud": [
+        "create",
+        "delete",
+        "read",
+        "update"
+      ],
+      "tags": [
+        "pet"
+      ]
+    },
+    "store": {
+      "endpoints": [
+        "GET /store/inventory",
+        "POST /store/order",
+        "GET /store/order/{orderId}",
+        "DELETE /store/order/{orderId}"
+      ],
+      "crud": [
+        "create",
+        "delete",
+        "read"
+      ],
+      "tags": [
+        "store"
+      ]
+    },
+    "user": {
+      "endpoints": [
+        "POST /user",
+        "POST /user/createWithList",
+        "GET /user/login",
+        "GET /user/logout",
+        "GET /user/{username}",
+        "PUT /user/{username}",
+        "DELETE /user/{username}"
+      ],
+      "crud": [
+        "create",
+        "delete",
+        "read",
+        "update"
+      ],
+      "tags": [
+        "user"
+      ]
+    }
+  },
+  "endpoints": [
+    {
+      "id": "POST /pet",
+      "method": "POST",
+      "path": "/pet",
+      "operation_id": "addPet",
+      "summary": "Add a new pet to the store.",
+      "tags": [
+        "pet"
+      ],
+      "resource": "pet",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "id": 10,
+        "name": "doggie",
+        "category": {
+          "id": 1,
+          "name": "Dogs"
+        },
+        "photoUrls": [
+          "string"
+        ],
+        "tags": [
+          {
+            "id": 1,
+            "name": "string"
+          }
+        ],
+        "status": "available"
+      },
+      "success_status": 200,
+      "response_fields": [
+        "category",
+        "id",
+        "name",
+        "photoUrls",
+        "status",
+        "tags"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "422",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "PUT /pet",
+      "method": "PUT",
+      "path": "/pet",
+      "operation_id": "updatePet",
+      "summary": "Update an existing pet.",
+      "tags": [
+        "pet"
+      ],
+      "resource": "pet",
+      "kind": "update",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "id": 10,
+        "name": "doggie",
+        "category": {
+          "id": 1,
+          "name": "Dogs"
+        },
+        "photoUrls": [
+          "string"
+        ],
+        "tags": [
+          {
+            "id": 1,
+            "name": "string"
+          }
+        ],
+        "status": "available"
+      },
+      "success_status": 200,
+      "response_fields": [
+        "category",
+        "id",
+        "name",
+        "photoUrls",
+        "status",
+        "tags"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "404",
+        "422",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /pet/findByStatus",
+      "method": "GET",
+      "path": "/pet/findByStatus",
+      "operation_id": "findPetsByStatus",
+      "summary": "Finds Pets by status.",
+      "tags": [
+        "pet"
+      ],
+      "resource": "pet",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [
+        {
+          "name": "status",
+          "in": "query",
+          "required": true,
+          "type": "string",
+          "example": "available"
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [
+        "category",
+        "id",
+        "name",
+        "photoUrls",
+        "status",
+        "tags"
+      ],
+      "returns_array": true,
+      "responses": [
+        "200",
+        "400",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": true,
+      "deprecated": false
+    },
+    {
+      "id": "GET /pet/findByTags",
+      "method": "GET",
+      "path": "/pet/findByTags",
+      "operation_id": "findPetsByTags",
+      "summary": "Finds Pets by tags.",
+      "tags": [
+        "pet"
+      ],
+      "resource": "pet",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [
+        {
+          "name": "tags",
+          "in": "query",
+          "required": true,
+          "type": "array",
+          "example": [
+            "string"
+          ]
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [
+        "category",
+        "id",
+        "name",
+        "photoUrls",
+        "status",
+        "tags"
+      ],
+      "returns_array": true,
+      "responses": [
+        "200",
+        "400",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": true,
+      "deprecated": false
+    },
+    {
+      "id": "GET /pet/{petId}",
+      "method": "GET",
+      "path": "/pet/{petId}",
+      "operation_id": "getPetById",
+      "summary": "Find pet by ID.",
+      "tags": [
+        "pet"
+      ],
+      "resource": "pet",
+      "kind": "read",
+      "is_collection": false,
+      "path_params": [
+        "petId"
+      ],
+      "params": [
+        {
+          "name": "petId",
+          "in": "path",
+          "required": true,
+          "type": "integer",
+          "example": 1
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [
+        "category",
+        "id",
+        "name",
+        "photoUrls",
+        "status",
+        "tags"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "404",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": true,
+      "deprecated": false,
+      "id_providers": [
+        "POST /pet",
+        "GET /pet/findByStatus",
+        "GET /pet/findByTags"
+      ]
+    },
+    {
+      "id": "POST /pet/{petId}",
+      "method": "POST",
+      "path": "/pet/{petId}",
+      "operation_id": "updatePetWithForm",
+      "summary": "Updates a pet in the store with form data.",
+      "tags": [
+        "pet"
+      ],
+      "resource": "pet",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [
+        "petId"
+      ],
+      "params": [
+        {
+          "name": "petId",
+          "in": "path",
+          "required": true,
+          "type": "integer",
+          "example": 1
+        },
+        {
+          "name": "name",
+          "in": "query",
+          "required": false,
+          "type": "string",
+          "example": "string"
+        },
+        {
+          "name": "status",
+          "in": "query",
+          "required": false,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [
+        "category",
+        "id",
+        "name",
+        "photoUrls",
+        "status",
+        "tags"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "POST /pet",
+        "GET /pet/findByStatus",
+        "GET /pet/findByTags"
+      ]
+    },
+    {
+      "id": "DELETE /pet/{petId}",
+      "method": "DELETE",
+      "path": "/pet/{petId}",
+      "operation_id": "deletePet",
+      "summary": "Deletes a pet.",
+      "tags": [
+        "pet"
+      ],
+      "resource": "pet",
+      "kind": "delete",
+      "is_collection": false,
+      "path_params": [
+        "petId"
+      ],
+      "params": [
+        {
+          "name": "api_key",
+          "in": "header",
+          "required": false,
+          "type": "string",
+          "example": "string"
+        },
+        {
+          "name": "petId",
+          "in": "path",
+          "required": true,
+          "type": "integer",
+          "example": 1
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "POST /pet",
+        "GET /pet/findByStatus",
+        "GET /pet/findByTags"
+      ]
+    },
+    {
+      "id": "POST /pet/{petId}/uploadImage",
+      "method": "POST",
+      "path": "/pet/{petId}/uploadImage",
+      "operation_id": "uploadFile",
+      "summary": "Uploads an image.",
+      "tags": [
+        "pet"
+      ],
+      "resource": "pet",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [
+        "petId"
+      ],
+      "params": [
+        {
+          "name": "petId",
+          "in": "path",
+          "required": true,
+          "type": "integer",
+          "example": 1
+        },
+        {
+          "name": "additionalMetadata",
+          "in": "query",
+          "required": false,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": "application/octet-stream",
+      "request_example": "string",
+      "success_status": 200,
+      "response_fields": [
+        "code",
+        "message",
+        "type"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "404",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "POST /pet",
+        "GET /pet/findByStatus",
+        "GET /pet/findByTags"
+      ]
+    },
+    {
+      "id": "GET /store/inventory",
+      "method": "GET",
+      "path": "/store/inventory",
+      "operation_id": "getInventory",
+      "summary": "Returns pet inventories by status.",
+      "tags": [
+        "store"
+      ],
+      "resource": "store",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "default"
+      ],
+      "secured": true,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "POST /store/order",
+      "method": "POST",
+      "path": "/store/order",
+      "operation_id": "placeOrder",
+      "summary": "Place an order for a pet.",
+      "tags": [
+        "store"
+      ],
+      "resource": "store",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "id": 10,
+        "petId": 198772,
+        "quantity": 7,
+        "shipDate": "2026-01-01T00:00:00Z",
+        "status": "approved",
+        "complete": true
+      },
+      "success_status": 200,
+      "response_fields": [
+        "complete",
+        "id",
+        "petId",
+        "quantity",
+        "shipDate",
+        "status"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "422",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /store/order/{orderId}",
+      "method": "GET",
+      "path": "/store/order/{orderId}",
+      "operation_id": "getOrderById",
+      "summary": "Find purchase order by ID.",
+      "tags": [
+        "store"
+      ],
+      "resource": "store",
+      "kind": "read",
+      "is_collection": false,
+      "path_params": [
+        "orderId"
+      ],
+      "params": [
+        {
+          "name": "orderId",
+          "in": "path",
+          "required": true,
+          "type": "integer",
+          "example": 1
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [
+        "complete",
+        "id",
+        "petId",
+        "quantity",
+        "shipDate",
+        "status"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "404",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": true,
+      "deprecated": false,
+      "id_providers": [
+        "GET /store/inventory",
+        "POST /store/order"
+      ]
+    },
+    {
+      "id": "DELETE /store/order/{orderId}",
+      "method": "DELETE",
+      "path": "/store/order/{orderId}",
+      "operation_id": "deleteOrder",
+      "summary": "Delete purchase order by identifier.",
+      "tags": [
+        "store"
+      ],
+      "resource": "store",
+      "kind": "delete",
+      "is_collection": false,
+      "path_params": [
+        "orderId"
+      ],
+      "params": [
+        {
+          "name": "orderId",
+          "in": "path",
+          "required": true,
+          "type": "integer",
+          "example": 1
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "404",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "GET /store/inventory",
+        "POST /store/order"
+      ]
+    },
+    {
+      "id": "POST /user",
+      "method": "POST",
+      "path": "/user",
+      "operation_id": "createUser",
+      "summary": "Create user.",
+      "tags": [
+        "user"
+      ],
+      "resource": "user",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": {
+        "id": 10,
+        "username": "theUser",
+        "firstName": "John",
+        "lastName": "James",
+        "email": "john@email.com",
+        "password": "12345",
+        "phone": "12345",
+        "userStatus": 1
+      },
+      "success_status": 200,
+      "response_fields": [
+        "email",
+        "firstName",
+        "id",
+        "lastName",
+        "password",
+        "phone",
+        "userStatus",
+        "username"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "POST /user/createWithList",
+      "method": "POST",
+      "path": "/user/createWithList",
+      "operation_id": "createUsersWithListInput",
+      "summary": "Creates list of users with given input array.",
+      "tags": [
+        "user"
+      ],
+      "resource": "user",
+      "kind": "create",
+      "is_collection": false,
+      "path_params": [],
+      "params": [],
+      "content_type": "application/json",
+      "request_example": [
+        {
+          "id": 10,
+          "username": "theUser",
+          "firstName": "John",
+          "lastName": "James",
+          "email": "john@email.com",
+          "password": "12345",
+          "phone": "12345",
+          "userStatus": 1
+        }
+      ],
+      "success_status": 200,
+      "response_fields": [
+        "email",
+        "firstName",
+        "id",
+        "lastName",
+        "password",
+        "phone",
+        "userStatus",
+        "username"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": true,
+      "deprecated": false
+    },
+    {
+      "id": "GET /user/login",
+      "method": "GET",
+      "path": "/user/login",
+      "operation_id": "loginUser",
+      "summary": "Logs user into the system.",
+      "tags": [
+        "user"
+      ],
+      "resource": "user",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [
+        {
+          "name": "username",
+          "in": "query",
+          "required": false,
+          "type": "string",
+          "example": "string"
+        },
+        {
+          "name": "password",
+          "in": "query",
+          "required": false,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": true,
+      "search_like": true,
+      "deprecated": false
+    },
+    {
+      "id": "GET /user/logout",
+      "method": "GET",
+      "path": "/user/logout",
+      "operation_id": "logoutUser",
+      "summary": "Logs out current logged in user session.",
+      "tags": [
+        "user"
+      ],
+      "resource": "user",
+      "kind": "read",
+      "is_collection": true,
+      "path_params": [],
+      "params": [],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": true,
+      "search_like": false,
+      "deprecated": false
+    },
+    {
+      "id": "GET /user/{username}",
+      "method": "GET",
+      "path": "/user/{username}",
+      "operation_id": "getUserByName",
+      "summary": "Get user by user name.",
+      "tags": [
+        "user"
+      ],
+      "resource": "user",
+      "kind": "read",
+      "is_collection": false,
+      "path_params": [
+        "username"
+      ],
+      "params": [
+        {
+          "name": "username",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [
+        "email",
+        "firstName",
+        "id",
+        "lastName",
+        "password",
+        "phone",
+        "userStatus",
+        "username"
+      ],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "404",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "POST /user",
+        "POST /user/createWithList",
+        "GET /user/login",
+        "GET /user/logout"
+      ]
+    },
+    {
+      "id": "PUT /user/{username}",
+      "method": "PUT",
+      "path": "/user/{username}",
+      "operation_id": "updateUser",
+      "summary": "Update user resource.",
+      "tags": [
+        "user"
+      ],
+      "resource": "user",
+      "kind": "update",
+      "is_collection": false,
+      "path_params": [
+        "username"
+      ],
+      "params": [
+        {
+          "name": "username",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": "application/json",
+      "request_example": {
+        "id": 10,
+        "username": "theUser",
+        "firstName": "John",
+        "lastName": "James",
+        "email": "john@email.com",
+        "password": "12345",
+        "phone": "12345",
+        "userStatus": 1
+      },
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "404",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "POST /user",
+        "POST /user/createWithList",
+        "GET /user/login",
+        "GET /user/logout"
+      ]
+    },
+    {
+      "id": "DELETE /user/{username}",
+      "method": "DELETE",
+      "path": "/user/{username}",
+      "operation_id": "deleteUser",
+      "summary": "Delete user resource.",
+      "tags": [
+        "user"
+      ],
+      "resource": "user",
+      "kind": "delete",
+      "is_collection": false,
+      "path_params": [
+        "username"
+      ],
+      "params": [
+        {
+          "name": "username",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "example": "string"
+        }
+      ],
+      "content_type": null,
+      "request_example": null,
+      "success_status": 200,
+      "response_fields": [],
+      "returns_array": false,
+      "responses": [
+        "200",
+        "400",
+        "404",
+        "default"
+      ],
+      "secured": false,
+      "auth_related": false,
+      "search_like": false,
+      "deprecated": false,
+      "id_providers": [
+        "POST /user",
+        "POST /user/createWithList",
+        "GET /user/login",
+        "GET /user/logout"
+      ]
+    }
+  ]
+}
