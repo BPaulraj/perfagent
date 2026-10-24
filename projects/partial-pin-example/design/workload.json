@@ -1,7 +1,7 @@
 {
   "project": "partial-pin-example",
   "planned_peak_rps": 2.59,
-  "generated_at": "2026-10-24T11:05:35+05:30",
+  "generated_at": "2026-10-24T12:35:23+05:30",
   "model": "open (arrival-rate) - Little's Law sizing",
   "nfr": {
     "peak_concurrent_users": 10,
@@ -155,6 +155,24 @@
       ],
       "abort_on_fail": true,
       "total_duration": "30m"
+    },
+    "quick": {
+      "purpose": "Short check at 100% of peak - framework demos, not a sign-off test",
+      "stages": [
+        {
+          "duration": "20s",
+          "target": 1.0
+        },
+        {
+          "duration": "80s",
+          "target": 1.0
+        },
+        {
+          "duration": "10s",
+          "target": 0
+        }
+      ],
+      "total_duration": "1m50s"
     }
   },
   "scenarios": [

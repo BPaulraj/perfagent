@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 0.1 (draft - generated 2026-10-24T11:03:56+05:30) |
+| Version | 0.1 (draft - generated 2026-10-24T12:41:42+05:30) |
 | Environment | test |
 | Web URL | http://localhost:5173 |
 | API base URL | http://localhost:4000/api |

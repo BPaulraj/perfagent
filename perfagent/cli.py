@@ -101,6 +101,9 @@ def main() -> None:
     s.add_argument("--dry-run", action="store_true", help="print the k6 command only")
     s.add_argument("--allow-production", action="store_true")
     s.add_argument("-e", "--env", action="append", default=[], help="extra KEY=VALUE passed to k6")
+    s.add_argument("--segment", help="distributed run: this machine's slice, e.g. 2/3 = 2nd of 3 machines")
+    s.add_argument("--testid", help="shared id for all machines of a distributed run (results are combined by it)")
+    s.add_argument("--start-at", help="wait until local time HH:MM[:SS] before starting (start all machines together)")
 
     s = sub.add_parser("audit", help="front-end Lighthouse audit (single user, no load) of configured pages")
     s.add_argument("project")
@@ -112,6 +115,7 @@ def main() -> None:
     s = sub.add_parser("report", help="(re)build the report for a run (default: latest)")
     s.add_argument("project")
     s.add_argument("run_id", nargs="?")
+    s.add_argument("--from-influx", metavar="TESTID", help="combined report for a distributed run, built from InfluxDB")
 
     s = sub.add_parser("baseline", help="mark a run as the comparison baseline")
     s.add_argument("project")
@@ -152,13 +156,18 @@ def main() -> None:
         cmd_generate(project, args.force)
     elif args.cmd == "run":
         from perfagent.runner import cmd_run
-        cmd_run(project, args.type, args.scale, args.influx, args.dry_run, args.allow_production, args.headed, args.env)
+        cmd_run(project, args.type, args.scale, args.influx, args.dry_run, args.allow_production, args.headed, args.env,
+                args.segment, args.testid, args.start_at)
     elif args.cmd == "audit":
         from perfagent.audit import cmd_audit
         cmd_audit(project, args.runs, args.form_factor, args.page, args.headed)
     elif args.cmd == "report":
-        from perfagent.report import cmd_report
-        cmd_report(project, args.run_id)
+        if args.from_influx:
+            from perfagent.report_influx import cmd_report_influx
+            cmd_report_influx(project, args.from_influx)
+        else:
+            from perfagent.report import cmd_report
+            cmd_report(project, args.run_id)
     elif args.cmd == "baseline":
         from perfagent.report import cmd_baseline
         cmd_baseline(project, args.run_id)

@@ -27,6 +27,8 @@ python -m perfagent catalog <name> score|review|approve|reject|defer [IDs|all] [
 python -m perfagent design <name>
 python -m perfagent generate <name> [--force]
 python -m perfagent run <name> --type smoke|load|stress|spike|soak|breakpoint [--scale 0.25] [--influx] [--dry-run]
+python -m perfagent run <name> --type load --segment 2/3 --testid ID [--start-at HH:MM]   # one machine of a distributed run
+python -m perfagent report <name> --from-influx ID                                       # combined distributed report
 python -m perfagent audit <name> [--runs 3] [--form-factor mobile|desktop|both] [--page NAME]   # Lighthouse front-end audit
 python -m perfagent report <name> [run_id]   |   baseline <name> <run_id>   |   runs <name>
 python -m perfagent agents check|sync        # keep Copilot/Claude customisation files in step

@@ -1,7 +1,7 @@
 {
   "project": "demo-app",
   "planned_peak_rps": 5.09,
-  "generated_at": "2026-10-24T11:03:56+05:30",
+  "generated_at": "2026-10-24T12:41:42+05:30",
   "model": "open (arrival-rate) - Little's Law sizing",
   "nfr": {
     "peak_concurrent_users": 20,

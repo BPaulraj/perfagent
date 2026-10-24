@@ -2,7 +2,9 @@
 
 import os
 import shutil
+import shlex
 import subprocess
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -24,8 +26,41 @@ def find_k6() -> str:
     return exe
 
 
+def parse_segment(segment: str) -> tuple[int, int]:
+    """'2/3' -> (2, 3): this machine runs the 2nd of 3 equal slices of the load."""
+    try:
+        i, n = (int(x) for x in segment.split("/"))
+        assert 1 <= i <= n
+        return i, n
+    except Exception:
+        raise SystemExit(f"--segment must look like 2/3 (this machine's slice / number of machines), got '{segment}'")
+
+
+def segment_flags(i: int, n: int) -> list[str]:
+    def frac(k: int) -> str:
+        return "0" if k == 0 else ("1" if k == n else f"{k}/{n}")
+    sequence = ",".join(frac(k) for k in range(n + 1))
+    return ["--execution-segment", f"{frac(i - 1)}:{frac(i)}", "--execution-segment-sequence", sequence]
+
+
+def wait_until(start_at: str) -> None:
+    """Block until local wall-clock HH:MM[:SS] so every machine of a distributed run starts together (NTP-synced clocks)."""
+    try:
+        parts = [int(x) for x in start_at.split(":")]
+        target = datetime.now().replace(hour=parts[0], minute=parts[1], second=parts[2] if len(parts) > 2 else 0, microsecond=0)
+    except Exception:
+        raise SystemExit(f"--start-at must be HH:MM or HH:MM:SS (local time), got '{start_at}'")
+    delay = (target - datetime.now()).total_seconds()
+    if delay < -60:
+        raise SystemExit(f"--start-at {start_at} is in the past")
+    if delay > 0:
+        print(f"Waiting {delay:.0f}s until {target:%H:%M:%S} to start in sync with the other load generators...")
+        time.sleep(delay)
+
+
 def cmd_run(project: Project, test_type: str, scale: float, influx: bool, dry_run: bool,
-            allow_production: bool, headed: bool, extra_env: list[str]) -> None:
+            allow_production: bool, headed: bool, extra_env: list[str],
+            segment: str | None = None, testid: str | None = None, start_at: str | None = None) -> None:
     main_js = project.scripts_dir / "main.js"
     if not main_js.exists():
         raise SystemExit("No scripts. Run: python -m perfagent generate " + project.name)
@@ -46,17 +81,27 @@ def cmd_run(project: Project, test_type: str, scale: float, influx: bool, dry_ru
         if not last or last.get("exit_code") not in (0, 99):
             print("WARNING: no successful smoke run on record - run '--type smoke' first to validate scripts and data.")
 
+    seg = parse_segment(segment) if segment else None
+    if seg and not testid:
+        raise SystemExit("Distributed run: pass the same --testid on every machine (e.g. --testid load-2026-10-24) so results can be combined")
+    if seg and not influx:
+        print("Distributed run: enabling --influx so every machine streams to the shared InfluxDB (combine with: report --from-influx)")
+        influx = True
+
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}_{test_type}"
     run_dir = project.runs_dir / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
     project.load_env()
     k6 = find_k6()
-    cmd = [k6, "run", str(main_js), "--quiet", "--tag", f"testid={run_id}",
+    cmd = [k6, "run", str(main_js), "--quiet", "--tag", f"testid={testid or run_id}", "--tag", f"test_type={test_type}", "--tag", f"project={project.name}",
            "-e", f"TEST_TYPE={test_type}", "-e", f"BASE_URL={base_url}", "-e", f"WEB_URL={web_url}",
            "-e", f"SCALE={scale}", "-e", f"SUMMARY_PATH={run_dir / 'summary.json'}"]
     for kv in extra_env:
         cmd += ["-e", kv]
+    if seg:
+        cmd += segment_flags(*seg) + ["--tag", f"segment={seg[0]}of{seg[1]}"]
+    cmd += shlex.split(os.environ.get("K6_EXTRA_ARGS", ""), posix=os.name != "nt")  # e.g. "--address localhost:6566"
     if influx:
         cmd += ["--out", f"influxdb={(project.cfg.get('monitoring') or {}).get('influxdb_url', 'http://localhost:8086/k6')}"]
 
@@ -70,12 +115,15 @@ def cmd_run(project: Project, test_type: str, scale: float, influx: bool, dry_ru
     if dry_run:
         run_dir.rmdir()
         return
+    if start_at:
+        wait_until(start_at)
     print("Live dashboard: http://localhost:5665  (exported to dashboard.html at the end)\n")
 
     meta = {"run_id": run_id, "project": project.name, "test_type": test_type, "scale": scale,
             "environment": project.environment, "base_url": base_url, "web_url": web_url,
             "started_at": now_iso(), "k6_version": k6_version(k6),
-            "scenarios": [s["id"] for s in workload["scenarios"]]}
+            "scenarios": [s["id"] for s in workload["scenarios"]],
+            "testid": testid or run_id, "segment": f"{seg[0]}/{seg[1]}" if seg else None}
     write_json(run_dir / "meta.json", meta)
     with open(run_dir / "k6.log", "w", encoding="utf-8") as log:
         proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
@@ -88,6 +136,9 @@ def cmd_run(project: Project, test_type: str, scale: float, influx: bool, dry_ru
     meta.update({"finished_at": now_iso(), "exit_code": proc.returncode,
                  "k6_status": K6_EXIT.get(proc.returncode, "error")})
     write_json(run_dir / "meta.json", meta)
+    if seg:
+        print(f"This machine ran segment {seg[0]}/{seg[1]} - its report covers only its share of the load. "
+              f"Combined result for all machines: python -m perfagent report {project.name} --from-influx {testid}")
     if (run_dir / "summary.json").exists():
         report.build(project, run_dir)
     else:

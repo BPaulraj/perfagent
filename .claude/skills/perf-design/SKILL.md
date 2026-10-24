@@ -28,4 +28,6 @@ Precondition: `catalog.yaml` has `status: approved` scenarios. If it doesn't, go
 - Before any non-smoke run: confirm with the user that the environment window is agreed. Load affects shared systems.
 - Never use `--allow-production` unless the user explicitly instructs it with approval.
 
+**Distributed load:** if one machine can't produce the load (load-generator CPU above 80%, dropped iterations, many browser users), split it across machines. Run `run --segment i/n --testid <shared id> --start-at HH:MM` on each, with all of them streaming to the shared InfluxDB, then `report <name> --from-influx <id>` for the combined verdict. Each machine's own report covers only its share. Confirm the machines, the start time and the InfluxDB with the user first.
+
 If smoke fails, use **perf-smoke-debug**. After each run, use **perf-results** to interpret it.

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 0.1 (draft - generated 2026-10-24T11:05:35+05:30) |
+| Version | 0.1 (draft - generated 2026-10-24T12:35:23+05:30) |
 | Environment | test |
 | Web URL | http://localhost:5180 |
 | API base URL | http://localhost:5180 |
@@ -56,6 +56,7 @@ Hybrid model: protocol-level VUs generate the load, and 1 real-browser VU(s) mea
 | 4 | spike | Sudden surge to 300% of peak (sale launch, batch release) and recovery back to normal. | 30%/2m → 30%/2m → 300%/30s → 300%/3m → 30%/30s → 30%/3m → 0%/1m | 12m |
 | 5 | soak | 80% of peak for hours to expose memory leaks, connection-pool exhaustion and resource creep. | 80%/5m → 80%/4h → 0%/5m | 4h10m |
 | 6 | breakpoint | Linear ramp to 500% until the error-rate guard aborts - establishes maximum capacity. | 500%/30m | 30m |
+| 7 | quick | Short check at 100% of peak - framework demos, not a sign-off test | 100%/20s → 100%/80s → 0%/10s | 1m50s |
 
 Run order: smoke → load (record the baseline) → stress → spike → soak → breakpoint. Repeat each failed test after tuning. Run each test at least twice to confirm results are repeatable (within ±10%).
 

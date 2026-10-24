@@ -4,6 +4,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 import encoding from 'k6/encoding';
+import exec from 'k6/execution';
 
 export const BASE_URL = (__ENV.BASE_URL || '').replace(/\/$/, '');
 export const WEB_URL = (__ENV.WEB_URL || BASE_URL).replace(/\/$/, '');
@@ -126,9 +127,11 @@ export function newContext(setupData, scenarioId) {
   const rows = DATASETS[scenarioId];
   let row = {};
   if (rows && rows.length) {
-    row = DATA_MODES[scenarioId] === 'unique-per-vu' ? rows[(__VU - 1) % rows.length] : rows[(__VU * 7919 + __ITER) % rows.length];
-    if (DATA_MODES[scenarioId] === 'unique-per-vu' && __VU > rows.length && __ITER === 0) {
-      console.warn(`[${scenarioId}] ${__VU} VUs but only ${rows.length} data rows - rows are being shared; add more accounts`);
+    // idInTest is unique across all machines of a distributed (execution-segment) run; equals __VU on one machine
+    const vu = exec.vu.idInTest;
+    row = DATA_MODES[scenarioId] === 'unique-per-vu' ? rows[(vu - 1) % rows.length] : rows[(vu * 7919 + __ITER) % rows.length];
+    if (DATA_MODES[scenarioId] === 'unique-per-vu' && vu > rows.length && __ITER === 0) {
+      console.warn(`[${scenarioId}] VU ${vu} but only ${rows.length} data rows - rows are being shared; add more accounts`);
     }
   }
   return { vars: { ...row }, headers: (setupData && setupData.headers) || {} };
@@ -290,7 +293,9 @@ export function apiStep(ctx, step) {
     headers: Object.assign(headers, ctx.headers, interpolate(step.headers || {}, ctx.vars)),
     tags: { name: step.tag },
     redirects: step.follow_redirects === false ? 0 : 10,
-    responseCallback: http.expectedStatuses(...expected),
+    // intermediate 3xx hops are recorded as separate requests - they are not failures; the final status is checked below
+    responseCallback: step.follow_redirects === false ? http.expectedStatuses(...expected)
+      : http.expectedStatuses(...expected, { min: 300, max: 399 }),
   });
   const ok = check(res, { [`${step.tag} -> ${expected.join('|')}`]: (r) => expected.includes(r.status) });
   if (ok && step.extract) {

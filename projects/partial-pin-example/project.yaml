@@ -57,7 +57,10 @@ nfr:
 
 # Optional overrides of the built-in test profiles (see docs/PERF_STRATEGY.md).
 # Stage targets are multipliers of the designed peak load.
-test_profiles: {}
+test_profiles:
+  quick:                            # custom 2-minute profile for trying things out (e.g. distributed runs)
+    purpose: Short check at 100% of peak - framework demos, not a sign-off test
+    stages: [{duration: 20s, target: 1.0}, {duration: 80s, target: 1.0}, {duration: 10s, target: 0}]
 #  load:
 #    stages: [{duration: 5m, target: 1.0}, {duration: 30m, target: 1.0}, {duration: 2m, target: 0}]
 

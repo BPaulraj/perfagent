@@ -72,7 +72,9 @@ def build_workload(project: Project) -> dict:
     web_scenarios = [s for s in approved if s["type"] == "web"]
 
     total_share = sum(float(s.get("workload_share", 0)) for s in api_scenarios) or len(api_scenarios)
-    profiles = {k: {**v, **((project.cfg.get("test_profiles") or {}).get(k) or {})} for k, v in PROFILES.items()}
+    custom = project.cfg.get("test_profiles") or {}
+    profiles = {k: {**PROFILES.get(k, {"purpose": "Custom profile (project.yaml test_profiles)"}), **(custom.get(k) or {})}
+                for k in [*PROFILES, *[c for c in custom if c not in PROFILES]]}
     for p in profiles.values():
         p["total_duration"] = fmt_duration(sum(duration_s(st["duration"]) for st in p["stages"])) if p["stages"] else None
 

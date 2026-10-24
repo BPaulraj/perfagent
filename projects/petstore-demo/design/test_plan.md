@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 0.1 (draft - generated 2026-10-24T11:03:57+05:30) |
+| Version | 0.1 (draft - generated 2026-10-24T12:41:45+05:30) |
 | Environment | test |
 | Web URL | https://petstore3.swagger.io |
 | API base URL | https://petstore3.swagger.io/api/v3 |

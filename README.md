@@ -18,7 +18,7 @@ It works with an AI assistant (**GitHub Copilot** or **Claude Code**) doing the 
 5. [Scenarios without AI (`catalog.yaml`)](#5-scenarios-without-ai-catalogyaml)
 6. [Test types and running tests](#6-test-types-and-running-tests)
 7. [Reading the results](#7-reading-the-results)
-8. [Run the scripts standalone (k6 only)](#8-run-the-scripts-standalone-k6-only) · [Front-end audits (Lighthouse)](#front-end-audits-lighthouse)
+8. [Run the scripts standalone (k6 only)](#8-run-the-scripts-standalone-k6-only) · [Distributed load](#distributed-load-several-k6-machines) · [Front-end audits (Lighthouse)](#front-end-audits-lighthouse)
 9. [CI/CD](#9-cicd)
 10. [AI assistants: GitHub Copilot and Claude Code](#10-ai-assistants-github-copilot-and-claude-code)
 11. [Command reference](#11-command-reference)
@@ -174,7 +174,7 @@ Useful options:
 - `--influx`: stream metrics to Grafana.
 - `-e KEY=VALUE`: pass extra variables to k6.
 
-Change the user count in `project.yaml` (`nfr.peak_concurrent_users`) or durations in `test_profiles`, then run `design` and `generate` again.
+Change the user count in `project.yaml` (`nfr.peak_concurrent_users`) or durations in `test_profiles`, then run `design` and `generate` again. `test_profiles` can also define **new** profiles (e.g. a 2-minute `quick` profile) that you run with `--type quick`.
 
 **While a test runs**, the live dashboard is at http://localhost:5665. **Close that tab when the test ends**: k6 waits for connected dashboard clients before writing the summary and exiting.
 
@@ -217,6 +217,26 @@ It prints a PASS/FAIL table per scenario and writes `summary.json`.
 - To tune the load without code changes, edit `workload.json`.
 
 Each scripts folder has its own generated `README.md` listing the variables it needs.
+
+### Distributed load (several k6 machines)
+One machine runs out of CPU at high load, especially with many browser users. Split the load across machines that each have k6, the repo, and the same `projects/<name>/` folder (scripts, data, `.env`):
+
+```powershell
+# every machine: same --testid, its own --segment, same start time (clocks NTP-synced)
+python -m perfagent run shop --type load --segment 1/3 --testid shop-load-2026-11-02 --start-at 14:00
+python -m perfagent run shop --type load --segment 2/3 --testid shop-load-2026-11-02 --start-at 14:00
+python -m perfagent run shop --type load --segment 3/3 --testid shop-load-2026-11-02 --start-at 14:00
+
+# afterwards, from any machine that can reach the InfluxDB:
+python -m perfagent report shop --from-influx shop-load-2026-11-02
+```
+- **`--segment i/n`**: k6 execution segments. Each machine generates its share of every scenario's arrival rate, and together they produce exactly the designed load.
+- **Results:** every machine streams raw samples to the **shared InfluxDB** set in `monitoring.influxdb_url`, which must be reachable from all of them. `--influx` is switched on automatically.
+- **`report --from-influx`** builds one combined `report.html`. Percentiles are calculated over all samples, SLAs are evaluated across machines, and a run where a machine didn't report is marked **FAIL** because the load was incomplete.
+- **Each machine's own report covers only its share.** Its k6 thresholds also judge only that share, so use the combined report for the verdict.
+- **`data_mode: unique-per-vu` stays unique across machines**, using k6's test-wide user ID, so no account is shared.
+- **A single browser user can't be split**, so it runs on one segment. Give browser scenarios at least as many users as machines if they should be spread out.
+- **To try it on one computer:** give the second process its own ports with `K6_WEB_DASHBOARD_PORT=5666` and `K6_EXTRA_ARGS="--address localhost:6566"`.
 
 ### Front-end audits (Lighthouse)
 Load tests answer *"does it cope with many users?"*. Audits answer *"why is this page slow for one user?"* Use both.
@@ -285,6 +305,8 @@ Maintainers: after editing `.github/instructions` or `.github/prompts`, run `pyt
 | `design <name>` | Workload model and test plan |
 | `generate <name> [--force]` | k6 scripts (`--force` overwrites hand-edited scenario files) |
 | `run <name> --type <t> [--scale] [--dry-run] [--headed] [--influx] [-e K=V] [--allow-production]` | Execute a test |
+| `run ... --segment i/n --testid ID [--start-at HH:MM]` | One machine's share of a distributed run |
+| `report <name> --from-influx ID` | Combined report for a distributed run |
 | `audit <name> [--runs] [--form-factor] [--page] [--headed]` | Lighthouse front-end audit (single user, no load) |
 | `report <name> [run_id]` | Rebuild a run's report (default: the latest) |
 | `baseline <name> <run_id>` | Set the comparison baseline |
@@ -304,6 +326,8 @@ All commands are `python -m perfagent <command>`.
 | `No approved scenarios` | Approve some: `catalog <name> approve ...` |
 | `PERF_PASSWORD not set` / 401 errors | Put secrets in `projects/<name>/.env` or set them as environment variables |
 | Dropped iterations > 0 | The target load wasn't reached: the app saturated, or the load generator lacked CPU. Run k6 on a separate machine for heavy tests |
+| `Cannot reach InfluxDB` (`report --from-influx`) | Start it (`docker compose -f monitoring/docker-compose.yml up -d`) and check `monitoring.influxdb_url` is reachable from every machine |
+| Combined report: "Only 1 of 3 segments reported data" | A load generator failed or wasn't started. Check its own run folder and k6.log, then re-run |
 | `Lighthouse not found` | `npm install` in the repo root (Node.js 22.19+) |
 | Audit shows "Redirected to login" | The login replay failed or the session expired. Check `audit.login_scenario` and smoke-test that scenario first |
 | Odd characters or crashes in the Windows console | Use Windows Terminal. perfagent forces UTF-8 output |
