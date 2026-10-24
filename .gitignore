@@ -10,3 +10,6 @@ projects/*/.env
 
 # secret test data (PINs, passwords) - never commit
 projects/*/data/*.secret.csv
+
+# node tooling
+node_modules/

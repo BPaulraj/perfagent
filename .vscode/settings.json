@@ -8,7 +8,7 @@
   // Anything that sends load (run without --dry-run), records approvals (catalog approve/reject/defer)
   // or sets baselines still asks you first - that is the human gate.
   "chat.tools.terminal.autoApprove": {
-    "/^python -m perfagent (discover|traffic|design|generate|report|runs|agents)\\b/": true,
+    "/^python -m perfagent (discover|traffic|design|generate|report|runs|agents|audit)\\b/": true,
     "/^python -m perfagent catalog \\S+ (score|status|review)\\b/": true,
     "/^python -m perfagent run \\S+ .*--dry-run\\b/": true
   },

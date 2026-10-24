@@ -1,6 +1,6 @@
 # perfagent: performance test agent framework
 
-Give it a **web URL** and/or an **OpenAPI/Swagger spec** for an application written in any language. It explores the app, proposes ranked business scenarios for **your approval**, designs a realistic workload, generates **k6** scripts (API and real browser), runs them and reports against your SLAs.
+Give it a **web URL** and/or an **OpenAPI/Swagger spec** for an application written in any language. It explores the app, proposes ranked business scenarios for **your approval**, designs a realistic workload, generates **k6** scripts (API and real browser), runs them and reports against your SLAs. It also runs **Lighthouse front-end audits**, which show why a page is slow for a single user, alongside the load tests.
 
 It works with an AI assistant (**GitHub Copilot** or **Claude Code**) doing the analysis, or entirely by hand. The generated test scripts run with **k6 alone**, with no AI and no Python needed.
 
@@ -18,7 +18,7 @@ It works with an AI assistant (**GitHub Copilot** or **Claude Code**) doing the 
 5. [Scenarios without AI (`catalog.yaml`)](#5-scenarios-without-ai-catalogyaml)
 6. [Test types and running tests](#6-test-types-and-running-tests)
 7. [Reading the results](#7-reading-the-results)
-8. [Run the scripts standalone (k6 only)](#8-run-the-scripts-standalone-k6-only)
+8. [Run the scripts standalone (k6 only)](#8-run-the-scripts-standalone-k6-only) · [Front-end audits (Lighthouse)](#front-end-audits-lighthouse)
 9. [CI/CD](#9-cicd)
 10. [AI assistants: GitHub Copilot and Claude Code](#10-ai-assistants-github-copilot-and-claude-code)
 11. [Command reference](#11-command-reference)
@@ -33,12 +33,14 @@ It works with an AI assistant (**GitHub Copilot** or **Claude Code**) doing the 
 | Python | 3.11+ | Windows, macOS or Linux |
 | k6 | 1.x / 2.x | The load test engine, including browser support (Chromium) |
 | Chromium for Playwright | - | Used only by web discovery (the crawler) |
+| Node.js | 22.19+ | Only for front-end audits (Lighthouse). Install once: `npm install` |
 | Docker | optional | Only for the Grafana dashboards |
 | GitHub Copilot or Claude Code | optional | For AI-driven analysis (see §10) |
 
 ```powershell
 pip install -r requirements.txt
 python -m playwright install chromium
+npm install                                # Lighthouse, for `audit` (optional)
 
 # k6 - pick one:
 winget install k6 --source winget          # Windows (system-wide)
@@ -216,6 +218,31 @@ It prints a PASS/FAIL table per scenario and writes `summary.json`.
 
 Each scripts folder has its own generated `README.md` listing the variables it needs.
 
+### Front-end audits (Lighthouse)
+Load tests answer *"does it cope with many users?"*. Audits answer *"why is this page slow for one user?"* Use both.
+
+`python -m perfagent audit <name>` logs in with Playwright by **replaying a catalog browser scenario**, so partial PIN and other multi-step logins work. It saves the session, then runs **Lighthouse** on each configured page in a fresh browser with that session. Each page is run several times on mobile and desktop emulation, and the median is reported.
+```yaml
+# project.yaml
+audit:
+  login_scenario: SC-010
+  pages:
+    - { name: Login page, url: /login, auth: false }
+    - { name: Dashboard, url: /dashboard, auth: true }
+  form_factors: [mobile, desktop]
+  runs: 3
+  budgets: { performance: 80, lcp_ms: 2500, fcp_ms: 1800, tbt_ms: 200, cls: 0.1 }
+```
+`runs/<id>_audit/report.html` shows, per page and device:
+- scores (performance, accessibility, best practices, SEO)
+- LCP, FCP, TBT, CLS, Speed Index, TTFB and page weight
+- budget pass/fail
+- the **top improvement opportunities** with estimated savings
+- a link to the full Lighthouse report
+- the latest load run's browser vitals, for comparison
+
+Exit code 1 if a budget fails. Options: `--runs`, `--form-factor mobile|desktop|both`, `--page`, `--headed`. Note that dev servers (Vite, webpack) serve unbundled code, so audit a production build before raising bundle-size findings.
+
 ## 9. CI/CD
 No CI workflows are included, so you can add a pipeline that fits your organisation. The scripts are CI-ready:
 - **Exit code 0** means all SLAs were met; **99** means an SLA was breached. Gate the pipeline on it.
@@ -239,7 +266,7 @@ Both get the same skills and rules, and each customisation has a single source o
 | Role agents with handoffs | `.github/agents/*.agent.md` | ✓ | - |
 | Terminal auto-approve (read-only commands) | `.vscode/settings.json` | ✓ | optional `.claude/settings.json` |
 
-- **Skills:** `perf-discover` · `perf-workload-from-logs` · `perf-design` · `perf-smoke-debug` · `perf-results`
+- **Skills:** `perf-discover` · `perf-workload-from-logs` · `perf-design` · `perf-smoke-debug` · `perf-results` · `perf-frontend-audit`
 - **Prompts:** `/perf-start` · `/perf-approve` · `/perf-run` · `/perf-report`
 - **Copilot agents:** `perf-analyst` → `perf-engineer` → `perf-results-analyst`
 
@@ -258,6 +285,7 @@ Maintainers: after editing `.github/instructions` or `.github/prompts`, run `pyt
 | `design <name>` | Workload model and test plan |
 | `generate <name> [--force]` | k6 scripts (`--force` overwrites hand-edited scenario files) |
 | `run <name> --type <t> [--scale] [--dry-run] [--headed] [--influx] [-e K=V] [--allow-production]` | Execute a test |
+| `audit <name> [--runs] [--form-factor] [--page] [--headed]` | Lighthouse front-end audit (single user, no load) |
 | `report <name> [run_id]` | Rebuild a run's report (default: the latest) |
 | `baseline <name> <run_id>` | Set the comparison baseline |
 | `runs <name>` | List runs |
@@ -276,6 +304,8 @@ All commands are `python -m perfagent <command>`.
 | `No approved scenarios` | Approve some: `catalog <name> approve ...` |
 | `PERF_PASSWORD not set` / 401 errors | Put secrets in `projects/<name>/.env` or set them as environment variables |
 | Dropped iterations > 0 | The target load wasn't reached: the app saturated, or the load generator lacked CPU. Run k6 on a separate machine for heavy tests |
+| `Lighthouse not found` | `npm install` in the repo root (Node.js 22.19+) |
+| Audit shows "Redirected to login" | The login replay failed or the session expired. Check `audit.login_scenario` and smoke-test that scenario first |
 | Odd characters or crashes in the Windows console | Use Windows Terminal. perfagent forces UTF-8 output |
 
 ## 13. Repository layout and safety

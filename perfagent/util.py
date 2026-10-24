@@ -68,3 +68,9 @@ ID_SEGMENT = re.compile(r"^(\d+|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-
 def normalize_path(path: str) -> str:
     """Replace id-like path segments with {id} so dynamic URLs group together."""
     return "/".join("{id}" if ID_SEGMENT.match(seg) else seg for seg in path.split("/"))
+
+
+def read_csv_rows(path: Path) -> list[dict]:
+    import csv
+    with open(path, newline="", encoding="utf-8") as f:
+        return [row for row in csv.DictReader(line for line in f if line.strip() and not line.lstrip().startswith("#"))]

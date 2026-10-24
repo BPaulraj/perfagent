@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Front-end Audit</title>
+{% include "_style.html.j2" %}
+<style>
+.score { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:50%; font-weight:700; border:3px solid currentColor; font-variant-numeric: tabular-nums; }
+.good { color: var(--pass); } .mid { color: var(--warn); } .poor { color: var(--fail); }
+</style>
+</head>
+{% macro sc(v) %}{% set c = 'good' if v >= 90 else ('mid' if v >= 50 else 'poor') %}<span class="score {{ c }}">{{ v | int }}</span>{% endmacro %}
+{% macro val(v, unit) %}{{ ("%.3f" | format(v)) if unit == 'cls' and v is not none else (("%d" | format(v)) ~ " ms" if v is not none else "-") }}{% endmacro %}
+{% macro rate(key, v) %}{% set t = {'lcp_ms': (2500, 4000), 'fcp_ms': (1800, 3000), 'tbt_ms': (200, 600), 'cls': (0.1, 0.25), 'si_ms': (3400, 5800), 'ttfb_ms': (800, 1800)}[key] %}{{ 'good' if v is not none and v <= t[0] else ('mid' if v is not none and v <= t[1] else 'poor') }}{% endmacro %}
+<body><main>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+  <div>
+    <h1>{{ project.name }} - front-end audit</h1>
+    <div class="sub">Run {{ r.meta.run_id }} · {{ r.meta.web_url }} · {{ r.meta.lighthouse and ("Lighthouse " ~ r.meta.lighthouse) }} · median of {{ r.meta.runs_per_page }} run(s) per page · single user, no load</div>
+  </div>
+  <span class="verdict {{ r.verdict }}">{{ r.verdict }}</span>
+</div>
+
+<div class="card muted" style="margin-bottom:8px">
+  Lab measurements with fixed emulation: <b>mobile</b> = mid-range phone, slow 4G, CPU throttling; <b>desktop</b> = fast network, no throttling.
+  Use this to find <i>why</i> pages are slow for one user. The load-test report shows how they behave under concurrency.
+  Pages behind login are audited without clearing storage, so the browser cache may be warm.
+</div>
+
+{% if r.errors %}
+<h2>Errors</h2>
+<div class="card"><ul>{% for e in r.errors %}<li class="fail">{{ e }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<h2>Pages</h2>
+<div class="table-wrap"><table>
+<tr><th>Page</th><th>Device</th><th>Perf</th><th>A11y</th><th>Best pr.</th><th>SEO</th><th class="n">LCP</th><th class="n">FCP</th><th class="n">TBT</th><th class="n">CLS</th><th class="n">Speed idx</th><th class="n">TTFB</th><th class="n">Weight</th><th>Budgets</th><th></th></tr>
+{% for x in r.results %}
+{% set failed = x.budgets | rejectattr("ok") | list %}
+<tr>
+  <td><b>{{ x.page }}</b><div class="muted">{{ x.url }}{{ " · login" if x.auth }}</div>{% if x.redirected_to_login %}<div class="fail">Redirected to login: not authenticated</div>{% endif %}</td>
+  <td>{{ x.form_factor }}</td>
+  {% for c in ("performance", "accessibility", "best-practices", "seo") %}<td>{{ sc(x.scores[c]) if c in x.scores else "-" }}</td>{% endfor %}
+  {% for k in ("lcp_ms", "fcp_ms", "tbt_ms", "cls", "si_ms", "ttfb_ms") %}<td class="n {{ rate(k, x[k]) }}">{{ val(x[k], 'cls' if k == 'cls' else 'ms') }}</td>{% endfor %}
+  <td class="n">{{ x.bytes_kb }} KB</td>
+  <td><span class="badge {{ 'fail' if failed else 'pass' }}">{{ (failed | length ~ " failed") if failed else "met" }}</span>
+      {% if failed %}<div class="muted">{% for b in failed %}{{ b.metric }} {{ b.value }} (budget {{ b.budget }}){{ "; " if not loop.last }}{% endfor %}</div>{% endif %}</td>
+  <td><a href="{{ x.html }}">full report</a></td>
+</tr>
+{% endfor %}
+</table></div>
+<p class="muted">Colours follow Google's thresholds (good / needs improvement / poor). Performance spread across runs: {% for x in r.results %}{{ x.page }} {{ x.form_factor }} {{ x.spread_performance[0] }}–{{ x.spread_performance[1] }}{{ "; " if not loop.last }}{% endfor %}.</p>
+
+<h2>Top improvement opportunities</h2>
+{% for x in r.results if x.fixes %}
+<div class="card" style="margin-bottom:10px">
+  <b>{{ x.page }}</b> · {{ x.form_factor }}
+  <ul style="margin:6px 0 0">{% for f in x.fixes %}<li>{{ f.title }}{% if f.display %} <span class="muted">- {{ f.display }}</span>{% endif %}{% if f.saving_ms %} <span class="badge warn">~{{ f.saving_ms }} ms</span>{% endif %}{% if f.saving_kb %} <span class="badge warn">~{{ f.saving_kb }} KB</span>{% endif %}</li>{% endfor %}</ul>
+</div>
+{% else %}
+<div class="card muted">No significant opportunities reported.</div>
+{% endfor %}
+
+{% if r.load_vitals %}
+<h2>Same journeys under load <span class="muted" style="font-weight:400;font-size:13px">(browser scenarios from {{ r.load_vitals[0].run_id }})</span></h2>
+<div class="table-wrap"><table>
+<tr><th>Scenario</th><th class="n">LCP p75</th><th class="n">FCP p75</th><th class="n">TTFB p75</th><th class="n">CLS</th></tr>
+{% for v in r.load_vitals %}<tr><td>{{ v.id }} {{ v.name }}</td><td class="n">{{ val(v.lcp, 'ms') }}</td><td class="n">{{ val(v.fcp, 'ms') }}</td><td class="n">{{ val(v.ttfb, 'ms') }}</td><td class="n">{{ val(v.cls, 'cls') }}</td></tr>{% endfor %}
+</table></div>
+<p class="muted">Compare with the desktop rows above. A big gap means load degrades the user experience (server side); poor values in both point to front-end weight or rendering.</p>
+{% endif %}
+
+<h2>Budgets</h2>
+<div class="card">{% for k, v in r.budgets.items() %}<code>{{ k }} {{ ">=" if k == "performance" else "<=" }} {{ v }}</code>{{ " · " if not loop.last }}{% endfor %}
+<div class="muted">Set in project.yaml → audit.budgets. Gate on metrics rather than the score: the score's weighting changes between Lighthouse versions.</div></div>
+<p class="muted">Generated {{ r.meta.generated_at }} by perfagent.</p>
+</main></body></html>

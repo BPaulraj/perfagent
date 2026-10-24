@@ -63,3 +63,12 @@ test_profiles: {}
 
 monitoring:
   influxdb_url: http://localhost:8086/k6    # used only with: run --influx
+
+# Front-end audits (python -m perfagent audit partial-pin-example)
+audit:
+  login_scenario: SC-003            # browser partial-PIN login, replayed by Playwright before auditing /accounts
+  pages:
+    - { name: Login page, url: /login, auth: false }
+    - { name: Accounts, url: /accounts, auth: true }
+  form_factors: [mobile, desktop]
+  runs: 3

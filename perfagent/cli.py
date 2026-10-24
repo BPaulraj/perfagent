@@ -102,6 +102,13 @@ def main() -> None:
     s.add_argument("--allow-production", action="store_true")
     s.add_argument("-e", "--env", action="append", default=[], help="extra KEY=VALUE passed to k6")
 
+    s = sub.add_parser("audit", help="front-end Lighthouse audit (single user, no load) of configured pages")
+    s.add_argument("project")
+    s.add_argument("--runs", type=int, help="Lighthouse runs per page and form factor (median reported, default 3)")
+    s.add_argument("--form-factor", choices=["mobile", "desktop", "both"])
+    s.add_argument("--page", help="only pages whose name contains this text")
+    s.add_argument("--headed", action="store_true", help="show the browser")
+
     s = sub.add_parser("report", help="(re)build the report for a run (default: latest)")
     s.add_argument("project")
     s.add_argument("run_id", nargs="?")
@@ -146,6 +153,9 @@ def main() -> None:
     elif args.cmd == "run":
         from perfagent.runner import cmd_run
         cmd_run(project, args.type, args.scale, args.influx, args.dry_run, args.allow_production, args.headed, args.env)
+    elif args.cmd == "audit":
+        from perfagent.audit import cmd_audit
+        cmd_audit(project, args.runs, args.form_factor, args.page, args.headed)
     elif args.cmd == "report":
         from perfagent.report import cmd_report
         cmd_report(project, args.run_id)

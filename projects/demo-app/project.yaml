@@ -63,3 +63,14 @@ test_profiles: {}
 
 monitoring:
   influxdb_url: http://localhost:8086/k6    # used only with: run --influx
+
+# Front-end audits (python -m perfagent audit demo-app): single user, no load, Lighthouse lab metrics
+audit:
+  login_scenario: SC-010            # catalog scenario whose steps log in; reused before auditing auth pages
+  pages:
+    - { name: Login page, url: /login, auth: false }
+    - { name: Dashboard, url: /dashboard, auth: true }
+    - { name: Trade, url: /trade, auth: true }
+  form_factors: [mobile, desktop]
+  runs: 3                           # median of N runs per page and device (Lighthouse varies run to run)
+  budgets: { performance: 80, lcp_ms: 2500, fcp_ms: 1800, tbt_ms: 200, cls: 0.1 }

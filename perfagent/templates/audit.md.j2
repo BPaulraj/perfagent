@@ -1,0 +1,14 @@
+## Front-end audit - {{ r.verdict }}
+
+Run `{{ r.meta.run_id }}` · median of {{ r.meta.runs_per_page }} Lighthouse run(s) per page · single user, no load
+
+| Page | Device | Perf | LCP | FCP | TBT | CLS | Weight | Budgets |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+{% for x in r.results %}
+{% set failed = x.budgets | rejectattr("ok") | list %}
+| {{ x.page }}{{ " (REDIRECTED TO LOGIN)" if x.redirected_to_login }} | {{ x.form_factor }} | {{ x.scores.performance | int }} | {{ x.lcp_ms }} | {{ x.fcp_ms }} | {{ x.tbt_ms }} | {{ x.cls }} | {{ x.bytes_kb }} KB | {{ ("FAIL: " ~ (failed | map(attribute="metric") | join(", "))) if failed else "met" }} |
+{% endfor %}
+{% if r.errors %}
+
+**Errors:** {% for e in r.errors %}{{ e }}{{ "; " if not loop.last }}{% endfor %}
+{% endif %}

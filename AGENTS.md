@@ -14,6 +14,7 @@ This is an application-agnostic performance test framework. **The AI assistant i
 | 5. Design, generate, smoke | Agent | `design` → `generate` → `run --type smoke` | `perf-design`, `perf-smoke-debug` |
 | 6. Load / stress / spike / soak | Agent, **with the user's go-ahead per run** | `run <name> --type <t>` | `perf-design` |
 | 7. Analyze and report | Agent | `report`, `baseline` | `perf-results` |
+| Any time: front-end audit | Agent | `audit <name>`: Lighthouse, single user, no load | `perf-frontend-audit` |
 
 Skills live in `.claude/skills/<name>/SKILL.md` (the Agent Skills standard). Both GitHub Copilot and Claude Code load them from there, so do not copy them to `.github/skills/`: duplicates load twice in Copilot.
 
@@ -26,6 +27,7 @@ python -m perfagent catalog <name> score|review|approve|reject|defer [IDs|all] [
 python -m perfagent design <name>
 python -m perfagent generate <name> [--force]
 python -m perfagent run <name> --type smoke|load|stress|spike|soak|breakpoint [--scale 0.25] [--influx] [--dry-run]
+python -m perfagent audit <name> [--runs 3] [--form-factor mobile|desktop|both] [--page NAME]   # Lighthouse front-end audit
 python -m perfagent report <name> [run_id]   |   baseline <name> <run_id>   |   runs <name>
 python -m perfagent agents check|sync        # keep Copilot/Claude customisation files in step
 ```

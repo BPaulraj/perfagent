@@ -204,6 +204,8 @@ def cmd_report(project: Project, run_id: str | None) -> None:
     if not runs:
         raise SystemExit("No runs yet.")
     run_id = run_id or runs[-1]["run_id"]
+    if run_id.endswith("_audit"):
+        raise SystemExit(f"{run_id} is a Lighthouse audit - its report is runs/{run_id}/report.html (re-run with: python -m perfagent audit {project.name})")
     build(project, project.runs_dir / run_id)
 
 

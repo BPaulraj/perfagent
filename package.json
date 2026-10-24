@@ -1,0 +1,8 @@
+{
+  "name": "perfagent-tools",
+  "private": true,
+  "description": "Node tooling used by perfagent (Lighthouse front-end audits). Install with: npm install",
+  "devDependencies": {
+    "lighthouse": "^13.5.0"
+  }
+}
