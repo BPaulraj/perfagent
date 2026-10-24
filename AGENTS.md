@@ -39,7 +39,7 @@ python -m perfagent agents check|sync        # keep Copilot/Claude customisation
 - Keep scenario IDs stable after review. Report results honestly: a FAIL is a finding, not something to hide.
 
 ## Repo map
-`perfagent/` framework · `perfagent/k6lib/common.js` k6 runtime · `perfagent/templates/` Jinja templates · `projects/<app>/` per-application artefacts · `monitoring/` Grafana + InfluxDB · `.claude/skills/` agent skills (shared) · `.github/` Copilot instructions, prompts, agents and workflows · `tools/k6.exe` portable k6 (git-ignored; set `K6_PATH` to override).
+`perfagent/` framework · `perfagent/k6lib/common.js` k6 runtime · `perfagent/templates/` Jinja templates · `projects/<app>/` per-application artefacts · `monitoring/` Grafana + InfluxDB · `.claude/skills/` agent skills (shared) · `.github/` Copilot instructions, prompts and agents · `tools/k6.exe` portable k6 (git-ignored; set `K6_PATH` to override).
 
 ## Editing this framework
 - Python 3.11+, stdlib + PyYAML/Jinja2/requests/Playwright only. Keep modules small and match the existing style.

@@ -19,7 +19,7 @@ It works with an AI assistant (**GitHub Copilot** or **Claude Code**) doing the 
 6. [Test types and running tests](#6-test-types-and-running-tests)
 7. [Reading the results](#7-reading-the-results)
 8. [Run the scripts standalone (k6 only)](#8-run-the-scripts-standalone-k6-only)
-9. [CI/CD (GitHub Actions)](#9-cicd-github-actions)
+9. [CI/CD](#9-cicd)
 10. [AI assistants: GitHub Copilot and Claude Code](#10-ai-assistants-github-copilot-and-claude-code)
 11. [Command reference](#11-command-reference)
 12. [Troubleshooting](#12-troubleshooting)
@@ -216,14 +216,15 @@ It prints a PASS/FAIL table per scenario and writes `summary.json`.
 
 Each scripts folder has its own generated `README.md` listing the variables it needs.
 
-## 9. CI/CD (GitHub Actions)
-| Workflow | Purpose |
-|---|---|
-| `.github/workflows/perf-test.yml` | Manual run (Actions → *Performance test*): choose the project, test type and scale. Smoke runs in environment `perf-smoke`; heavier tests run in **`perf-load`**, which should have **required reviewers** (Settings → Environments) as the go/no-go gate. Secrets `PERF_PASSWORD`, `PERF_TOKEN`, `PERF_API_KEY` and `PERF_USER` come from repository or environment secrets. The run summary appears on the job page, and the run folder is uploaded as an artifact |
-| `.github/workflows/agents-check.yml` | Fails a PR if the Copilot and Claude files drift apart |
-| `.github/workflows/copilot-setup-steps.yml` | Toolchain for the Copilot cloud agent |
-
-CI runners must be able to reach the target. `localhost` apps can't be tested from GitHub-hosted runners; use a self-hosted runner or a deployed test environment.
+## 9. CI/CD
+No CI workflows are included, so you can add a pipeline that fits your organisation. The scripts are CI-ready:
+- **Exit code 0** means all SLAs were met; **99** means an SLA was breached. Gate the pipeline on it.
+- A minimal job: install k6, run `python -m perfagent generate <name>` and `python -m perfagent run <name> --type smoke` (or run the standalone scripts with k6 alone, §8), then publish `projects/<name>/runs/` as an artifact.
+- Pass secrets (`PERF_PASSWORD`, `PERF_TOKEN`, ...) from your CI secret store as environment variables.
+- Put heavier test types behind a manual approval step, the CI version of the human go-ahead.
+- Runners must be able to reach the target. `localhost` and internal test environments need a self-hosted runner or agent inside your network.
+- Run `python -m perfagent agents check` in a PR check to keep the Copilot and Claude files in step.
+- GitHub note: pushing files under `.github/workflows/` with the GitHub CLI needs the `workflow` token scope (`gh auth refresh -s workflow`).
 
 ## 10. AI assistants: GitHub Copilot and Claude Code
 Both get the same skills and rules, and each customisation has a single source of truth:
@@ -285,7 +286,7 @@ projects/petstore-demo  example: public API with spec (smoke only), includes log
 projects/demo-app       example: local app without a spec, cookie login, seeded data, load run with findings
 projects/partial-pin-example  example: two-step partial-PIN bank login (API, HTML forms, browser) + mock bank
 .claude/skills/         AI skills (shared by Copilot and Claude)
-.github/                Copilot instructions, path rules, prompts, agents, CI workflows
+.github/                Copilot instructions, path rules, prompts, agents
 AGENTS.md / CLAUDE.md   AI operating guide
 monitoring/             InfluxDB + Grafana with a provisioned dashboard
 docs/PERF_STRATEGY.md   performance engineering standards (lifecycle, NFRs, workload modelling, entry/exit criteria, defect template)
